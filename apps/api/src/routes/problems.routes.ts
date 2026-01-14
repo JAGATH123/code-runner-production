@@ -36,7 +36,7 @@ router.get('/:id', optionalAuthMiddleware, async (req: Request, res: Response) =
 
     console.log(`[DEBUG] Looking for problem_id: ${problemId}`);
     const problem = await Models.Problem.findOne({ problem_id: problemId }).lean();
-    console.log(`[DEBUG] Found problem:`, problem ? `ID ${problem.problem_id} - ${problem.title}` : 'NULL');
+    console.log(`[DEBUG] Found problem:`, problem ? `ID ${(problem as any).problem_id} - ${(problem as any).title}` : 'NULL');
 
     if (!problem) {
       return res.status(404).json({ error: 'Problem not found' });
