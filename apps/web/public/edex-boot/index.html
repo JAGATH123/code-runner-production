@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eDEX-UI Boot Screen</title>
+
+    <!-- Load boot screen CSS -->
+    <link rel="stylesheet" href="css/boot_screen.css" />
+
+    <style>
+        /* CSS Variables for theme colors */
+        :root {
+            --color_r: 0;
+            --color_g: 255;
+            --color_b: 255;
+            --font_main: 'Courier New', monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: rgb(var(--color_r), var(--color_g), var(--color_b));
+            font-family: monospace;
+            overflow: hidden;
+        }
+
+        body.solidBackground {
+            background: linear-gradient(135deg, #001122 0%, #000000 100%);
+        }
+    </style>
+</head>
+<body class="solidBackground">
+    <section id="boot_screen">
+    </section>
+
+    <script src="js/boot_screen.js"></script>
+</body>
+</html>

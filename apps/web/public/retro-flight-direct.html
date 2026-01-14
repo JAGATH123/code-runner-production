@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simplex-noise@2.4.0/simplex-noise.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background: black; }
+    </style>
+</head>
+<body>
+<script>
+// EXACT SETUP STRUCTURE from your working missionpage.html
+const deviceInfo = {
+    screenWidth: () => window.innerWidth,
+    screenHeight: () => window.innerHeight,
+    screenRatio: () => window.innerWidth / window.innerHeight,
+    screenCenterX: () => window.innerWidth / 2,
+    screenCenterY: () => window.innerHeight / 2,
+};
+
+const addEase = (pos, to, ease) => {
+    pos.x += (to.x - pos.x) / ease;
+    pos.y += (to.y - pos.y) / ease;
+    pos.z += (to.z - pos.z) / ease;
+};
+
+// Wireframe ground object (simplified from your HTML)
+const wireframeGround = {
+    group: null,
+    simplex: null,
+
+    create(scene) {
+        this.simplex = new SimplexNoise();
+
+        // Create wireframe ground
+        const groundGeometry = new THREE.PlaneGeometry(4000, 2000, 128, 64);
+        const groundMaterial = new THREE.MeshLambertMaterial({
+            color: 0x9f40ff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        this.group = new THREE.Mesh(groundGeometry, groundMaterial);
+        this.group.rotation.x = -Math.PI / 2 + 0.5;
+        this.group.position.set(0, -300, -1000);
+
+        // Add noise to ground vertices
+        for (let i = 0; i < groundGeometry.vertices.length; i++) {
+            const vertex = groundGeometry.vertices[i];
+            vertex.z += this.simplex.noise2D(vertex.x * 0.003, vertex.y * 0.003) * 30;
+        }
+
+        scene.add(this.group);
+    },
+
+    update() {
+        // Animate ground movement
+        this.group.position.z += 2;
+        if (this.group.position.z > 1000) {
+            this.group.position.z = -1000;
+        }
+    }
+};
+
+// Main setup scene function (copied from your HTML)
+const setupScene = () => {
+    const scene = new THREE.Scene();
+
+    // Setup renderer with exact same settings as your HTML
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, precision: 'mediump' });
+    renderer.setSize(deviceInfo.screenWidth(), deviceInfo.screenHeight());
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x000000, 0);
+    renderer.sortObjects = true;
+
+    // Style the canvas exactly like your HTML
+    renderer.domElement.style.position = 'fixed';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.width = '100vw';
+    renderer.domElement.style.height = '100vh';
+    renderer.domElement.style.zIndex = '-1';
+    renderer.domElement.style.pointerEvents = 'none';
+
+    document.body.appendChild(renderer.domElement);
+
+    // Setup camera with exact same settings
+    const camera = new THREE.PerspectiveCamera(60, deviceInfo.screenRatio(), 0.1, 20000);
+    camera.position.set(0, 0, 300);
+    camera.rotation.set(0, 0, 0);
+
+    // Main lighting (purple theme)
+    const light = new THREE.PointLight(0x9f40ff, 4, 1000);
+    light.position.set(0, 200, -500);
+    scene.add(light);
+
+    // Create wireframe ground
+    wireframeGround.create(scene);
+
+    // Animation loop
+    const animate = () => {
+        wireframeGround.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+    };
+
+    // Resize handler
+    const onResize = () => {
+        camera.aspect = deviceInfo.screenRatio();
+        camera.updateProjectionMatrix();
+        renderer.setSize(deviceInfo.screenWidth(), deviceInfo.screenHeight());
+    };
+    window.addEventListener('resize', onResize);
+
+    // Start animation
+    animate();
+};
+
+// Wait for scripts to load, then initialize
+window.addEventListener('load', () => {
+    setTimeout(setupScene, 100); // Small delay to ensure scripts are ready
+});
+</script>
+</body>
+</html>
