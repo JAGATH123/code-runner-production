@@ -48,8 +48,8 @@ router.get('/:age_group', optionalAuthMiddleware, async (req: Request, res: Resp
       // Debug: Check how many problems we have
       if (level.level_number === 1) {
         console.log(`[DEBUG] Level 1 aggregation returned ${level.problems.length} problems`);
-        const uniqueSessions = [...new Set(level.problems.map((p: any) => p.session_id))];
-        console.log(`[DEBUG] Unique session IDs in problems:`, uniqueSessions.sort((a: number, b: number) => a - b));
+        const uniqueSessions = [...new Set(level.problems.map((p: any) => p.session_id))] as number[];
+        console.log(`[DEBUG] Unique session IDs in problems:`, uniqueSessions.sort((a, b) => a - b));
       }
 
       // Hardcoded session titles from database (Mongoose aggregation doesn't include session_title field)
