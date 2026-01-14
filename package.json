@@ -1,0 +1,21 @@
+{
+  "name": "code-runner-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:api": "npm run build --workspace=@code-runner/api",
+    "build:web": "npm run build --workspace=@code-runner/web",
+    "build:runner": "npm run build --workspace=@code-runner/runner",
+    "start:api": "npm run start --workspace=@code-runner/api",
+    "start:web": "npm run start --workspace=@code-runner/web",
+    "start:runner": "npm run start --workspace=@code-runner/runner"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
