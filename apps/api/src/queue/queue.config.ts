@@ -2,19 +2,24 @@ import { Queue, QueueOptions } from 'bullmq';
 import Redis from 'ioredis';
 
 // Redis connection configuration
-const redisConnection = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null, // Required for BullMQ
-};
+// Use REDIS_URL if available (Railway, Heroku, etc.), otherwise fall back to individual vars
+const redisConnection = process.env.REDIS_URL
+  ? process.env.REDIS_URL
+  : {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD || undefined,
+      maxRetriesPerRequest: null, // Required for BullMQ
+    };
 
 // Create Redis connection
-export const redis = new Redis(redisConnection);
+export const redis = new Redis(redisConnection, {
+  maxRetriesPerRequest: null, // Required for BullMQ
+});
 
 // Queue options
 const queueOptions: QueueOptions = {
-  connection: redisConnection,
+  connection: redis,  // Use the same Redis connection instance
   defaultJobOptions: {
     attempts: 3, // Retry failed jobs 3 times
     backoff: {
