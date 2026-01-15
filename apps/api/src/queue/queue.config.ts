@@ -3,6 +3,11 @@ import Redis from 'ioredis';
 
 // Redis connection configuration
 // Use REDIS_URL if available (Railway, Heroku, etc.), otherwise fall back to individual vars
+console.log('🔍 Redis Environment Variables Check:');
+console.log('  REDIS_URL:', process.env.REDIS_URL ? '✅ Set' : '❌ Not set');
+console.log('  REDIS_HOST:', process.env.REDIS_HOST || 'not set');
+console.log('  REDIS_PORT:', process.env.REDIS_PORT || 'not set');
+
 const redisConnection = process.env.REDIS_URL
   ? process.env.REDIS_URL
   : {
@@ -11,6 +16,8 @@ const redisConnection = process.env.REDIS_URL
       password: process.env.REDIS_PASSWORD || undefined,
       maxRetriesPerRequest: null, // Required for BullMQ
     };
+
+console.log('📡 Redis Connection Config:', typeof redisConnection === 'string' ? 'Using REDIS_URL' : 'Using host/port config');
 
 // Create Redis connection
 export const redis = new Redis(redisConnection, {
