@@ -8,21 +8,19 @@ console.log('  REDIS_URL:', process.env.REDIS_URL ? '✅ Set' : '❌ Not set');
 console.log('  REDIS_HOST:', process.env.REDIS_HOST || 'not set');
 console.log('  REDIS_PORT:', process.env.REDIS_PORT || 'not set');
 
-const redisConnection = process.env.REDIS_URL
-  ? process.env.REDIS_URL
-  : {
+// Create Redis connection
+export const redis = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: null, // Required for BullMQ
+    })
+  : new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD || undefined,
       maxRetriesPerRequest: null, // Required for BullMQ
-    };
+    });
 
-console.log('📡 Redis Connection Config:', typeof redisConnection === 'string' ? 'Using REDIS_URL' : 'Using host/port config');
-
-// Create Redis connection
-export const redis = new Redis(redisConnection, {
-  maxRetriesPerRequest: null, // Required for BullMQ
-});
+console.log('📡 Redis Connection:', process.env.REDIS_URL ? 'Using REDIS_URL' : 'Using host/port config');
 
 // Queue options
 const queueOptions: QueueOptions = {
