@@ -20,9 +20,14 @@ const redisConfig = process.env.REDIS_URL
 console.log('📡 Redis Connection:', process.env.REDIS_URL ? 'Using REDIS_URL' : 'Using host/port config');
 
 // Create standalone Redis connection for other uses
-export const redis = new Redis(redisConfig, {
-  maxRetriesPerRequest: null, // Required for BullMQ
-});
+export const redis = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null })
+  : new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD || undefined,
+      maxRetriesPerRequest: null,
+    });
 
 // Queue options - use connection string/config directly for BullMQ
 const queueOptions: QueueOptions = {
