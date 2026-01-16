@@ -8,23 +8,25 @@ console.log('  REDIS_URL:', process.env.REDIS_URL ? '✅ Set' : '❌ Not set');
 console.log('  REDIS_HOST:', process.env.REDIS_HOST || 'not set');
 console.log('  REDIS_PORT:', process.env.REDIS_PORT || 'not set');
 
-// Create Redis connection
-export const redis = process.env.REDIS_URL
-  ? new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: null, // Required for BullMQ
-    })
-  : new Redis({
+// Create Redis connection config for BullMQ
+const redisConfig = process.env.REDIS_URL
+  ? process.env.REDIS_URL
+  : {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD || undefined,
-      maxRetriesPerRequest: null, // Required for BullMQ
-    });
+    };
 
 console.log('📡 Redis Connection:', process.env.REDIS_URL ? 'Using REDIS_URL' : 'Using host/port config');
 
-// Queue options
+// Create standalone Redis connection for other uses
+export const redis = new Redis(redisConfig, {
+  maxRetriesPerRequest: null, // Required for BullMQ
+});
+
+// Queue options - use connection string/config directly for BullMQ
 const queueOptions: QueueOptions = {
-  connection: redis,  // Use the same Redis connection instance
+  connection: redisConfig as any,  // BullMQ will create its own Redis instance
   defaultJobOptions: {
     attempts: 3, // Retry failed jobs 3 times
     backoff: {
