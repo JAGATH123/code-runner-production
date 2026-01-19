@@ -15,6 +15,9 @@ import executionRoutes from './routes/execution.routes';
 import progressRoutes from './routes/progress.routes';
 import authRoutes from './routes/auth.routes';
 
+// Import Redis for health check
+import { redis } from './queue/queue.config';
+
 // Load environment variables - prioritize .env.local over .env
 dotenv.config({ path: '.env.local' });
 dotenv.config(); // Load .env as fallback
@@ -47,6 +50,48 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'code-runner-api',
   });
+});
+
+// Redis health check endpoint
+app.get('/health/redis', async (req, res) => {
+  try {
+    // Test Redis connection
+    await redis.ping();
+
+    // Get Redis info
+    const redisStatus = redis.status;
+
+    res.json({
+      status: 'healthy',
+      redis: {
+        connected: redisStatus === 'ready',
+        status: redisStatus,
+        host: redis.options.host || 'unknown',
+        port: redis.options.port || 'unknown',
+      },
+      environment: {
+        REDIS_URL: process.env.REDIS_URL ? '✅ Set' : '❌ Not set',
+        REDIS_HOST: process.env.REDIS_HOST || 'not set',
+        REDIS_PORT: process.env.REDIS_PORT || 'not set',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'unhealthy',
+      error: error.message,
+      redis: {
+        connected: false,
+        status: redis.status,
+      },
+      environment: {
+        REDIS_URL: process.env.REDIS_URL ? '✅ Set' : '❌ Not set',
+        REDIS_HOST: process.env.REDIS_HOST || 'not set',
+        REDIS_PORT: process.env.REDIS_PORT || 'not set',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // API Routes
