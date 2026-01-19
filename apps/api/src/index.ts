@@ -25,6 +25,9 @@ dotenv.config(); // Load .env as fallback
 const app: Express = express();
 const PORT = process.env.PORT || 4000;
 
+// Force cache bust for Railway deployment
+const BUILD_ID = '20260119-1';
+
 // Middleware
 app.use(helmet()); // Security headers
 
