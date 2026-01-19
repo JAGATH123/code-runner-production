@@ -1,11 +1,13 @@
+// IMPORTANT: Load environment variables FIRST, before any other imports
+// This ensures REDIS_URL and other env vars are available when modules load
 import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+dotenv.config(); // Load .env as fallback
+
 import { connectToDatabase } from '@code-runner/shared';
 import { DockerExecutor } from './executors/docker.executor';
 import { CodeExecutionWorker } from './workers/code-execution.worker';
 import { CodeSubmissionWorker } from './workers/code-submission.worker';
-
-// Load environment variables
-dotenv.config();
 
 let executionWorker: CodeExecutionWorker;
 let submissionWorker: CodeSubmissionWorker;
