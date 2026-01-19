@@ -1,4 +1,4 @@
-import { Worker, Job } from 'bullmq';
+import { Worker, Job, ConnectionOptions } from 'bullmq';
 import { SubmissionJobData, Models } from '@code-runner/shared';
 import { DockerExecutor } from '../executors/docker.executor';
 
@@ -8,8 +8,13 @@ console.log('[CodeSubmissionWorker] REDIS_URL:', process.env.REDIS_URL ? `SET ($
 console.log('[CodeSubmissionWorker] REDIS_HOST:', process.env.REDIS_HOST || 'not set');
 console.log('[CodeSubmissionWorker] REDIS_PORT:', process.env.REDIS_PORT || 'not set');
 
-const redisConnection = process.env.REDIS_URL
-  ? process.env.REDIS_URL
+const redisConnection: ConnectionOptions = process.env.REDIS_URL
+  ? {
+      host: new URL(process.env.REDIS_URL).hostname,
+      port: parseInt(new URL(process.env.REDIS_URL).port),
+      password: new URL(process.env.REDIS_URL).password || undefined,
+      maxRetriesPerRequest: null,
+    }
   : {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
@@ -17,7 +22,7 @@ const redisConnection = process.env.REDIS_URL
       maxRetriesPerRequest: null,
     };
 
-console.log('[CodeSubmissionWorker] Using:', typeof redisConnection === 'string' ? 'REDIS_URL' : `host ${redisConnection.host}:${redisConnection.port}`);
+console.log('[CodeSubmissionWorker] Using:', process.env.REDIS_URL ? `REDIS_URL (${redisConnection.host}:${redisConnection.port})` : `host ${redisConnection.host}:${redisConnection.port}`);
 
 export class CodeSubmissionWorker {
   private worker: Worker;
