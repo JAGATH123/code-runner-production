@@ -112,9 +112,9 @@ export default function BootPage() {
 
     // Initialize audio
     audioRef.current = {
-      stdout: new Audio('/login-assets/audio/stdout.wav'),
-      granted: new Audio('/login-assets/audio/granted.wav'),
-      theme: new Audio('/login-assets/audio/theme.wav'),
+      stdout: new Audio('/audio/stdout.wav'),
+      granted: new Audio('/audio/granted.wav'),
+      theme: new Audio('/audio/theme.wav'),
     };
 
     if (audioRef.current.stdout) audioRef.current.stdout.volume = 0.5;
@@ -226,7 +226,7 @@ export default function BootPage() {
       {/* Background Image - ENV from Login Page */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/login-assets/images/ENV-2.png"
+          src="/assets/ui/ENV-2.png"
           alt="Background"
           fill
           className="object-cover blur-0 "

@@ -288,7 +288,7 @@ export default function LevelPage({ params }: LevelPageProps) {
             <div
                 className="fixed inset-0 z-0"
                 style={{
-                    backgroundImage: 'url("/technological-exploration-settlement.jpg")',
+                    backgroundImage: 'url("/assets/ui/technological-exploration-settlement.jpg")',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat'

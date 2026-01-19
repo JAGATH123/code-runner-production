@@ -230,12 +230,12 @@ export default function LoginPage() {
   useEffect(() => {
     // Preload all images with minimum delay to ensure background is visible
     const imageUrls = [
-      '/login-assets/images/ENV-2.png',
-      '/login-assets/images/transperent.png',
-      '/login-assets/images/nila (2).png',
-      '/login-assets/images/Astro.png',
-      '/login-assets/images/Kenji_2.png',
-      '/login-assets/images/Leo.png'
+      '/assets/ui/ENV-2.png',
+      '/assets/ui/transperent.png',
+      '/assets/characters/nila (2).png',
+      '/assets/characters/Astro.png',
+      '/assets/characters/Kenji_2.png',
+      '/assets/characters/Leo.png'
     ];
 
     let loadedCount = 0;
@@ -331,7 +331,7 @@ export default function LoginPage() {
         {/* Background */}
         <div className="absolute inset-0 overflow-hidden bg-slate-200">
           <Image
-            src="/login-assets/images/ENV-2.png"
+            src="/assets/ui/ENV-2.png"
             alt="Background"
             fill
             className="object-cover opacity-150"
@@ -473,7 +473,7 @@ export default function LoginPage() {
                   <div className="mb-20">
                     <div className="mb-20 ">
                       <Image
-                        src="/login-assets/images/transperent.png"
+                        src="/assets/ui/transperent.png"
                         alt="Logo"
                         width={120}
                         height={120}
@@ -545,7 +545,7 @@ export default function LoginPage() {
                       <span className="text-base font-mono uppercase tracking-[0.15em] font-bold">Developed by</span>
                       <div className="w-full flex justify-center -mt-8">
                         <Image
-                          src="/login-assets/images/LOF_SVG.svg"
+                          src="/assets/ui/LOF_SVG.svg"
                           alt="LOF Logo"
                           width={140}
                           height={140}
@@ -572,7 +572,7 @@ export default function LoginPage() {
               >
                 <div className="w-full h-full relative overflow-hidden">
                   <Image
-                    src="/login-assets/images/background.png"
+                    src="/assets/ui/background.png"
                     alt="Background Card"
                     fill
                     className="object-cover"
@@ -598,7 +598,7 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('jett') : undefined}
                 >
                   <Image
-                    src="/login-assets/images/nila (2).png"
+                    src="/assets/characters/nila (2).png"
                     alt="Nila"
                     fill
                     className="opacity-90 object-cover object-top"
@@ -635,7 +635,7 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('omen') : undefined}
                 >
                   <Image
-                    src="/login-assets/images/Astro.png"
+                    src="/assets/characters/Astro.png"
                     alt="Astra"
                     fill
                     className="opacity-90 object-cover object-top"
@@ -672,7 +672,7 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('yoru') : undefined}
                 >
                   <Image
-                    src="/login-assets/images/Kenji_2.png"
+                    src="/assets/characters/Kenji_2.png"
                     alt="Kenji"
                     fill
                     className="opacity-90 object-cover object-top"
@@ -709,7 +709,7 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('phoenix') : undefined}
                 >
                   <Image
-                    src="/login-assets/images/Leo.png"
+                    src="/assets/characters/Leo.png"
                     alt="Leo"
                     fill
                     className="opacity-90 object-cover object-top"

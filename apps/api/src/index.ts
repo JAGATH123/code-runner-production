@@ -1,8 +1,13 @@
+// IMPORTANT: Load environment variables FIRST, before any other imports
+// This ensures REDIS_URL and other env vars are available when modules load
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+dotenv.config(); // Load .env as fallback
+
 import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import { connectToDatabase } from '@code-runner/shared';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
@@ -15,12 +20,8 @@ import executionRoutes from './routes/execution.routes';
 import progressRoutes from './routes/progress.routes';
 import authRoutes from './routes/auth.routes';
 
-// Import Redis for health check
+// Import Redis for health check (AFTER dotenv is loaded)
 import { redis } from './queue/queue.config';
-
-// Load environment variables - prioritize .env.local over .env
-dotenv.config({ path: '.env.local' });
-dotenv.config(); // Load .env as fallback
 
 const app: Express = express();
 const PORT = process.env.PORT || 4000;
