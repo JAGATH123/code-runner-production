@@ -1,15 +1,16 @@
 import { Worker, Job } from 'bullmq';
-import Redis from 'ioredis';
 import { SubmissionJobData, Models } from '@code-runner/shared';
 import { DockerExecutor } from '../executors/docker.executor';
 
-// Redis connection configuration
-const redisConnection = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null,
-};
+// Redis connection configuration - use REDIS_URL if available
+const redisConnection = process.env.REDIS_URL
+  ? process.env.REDIS_URL
+  : {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD || undefined,
+      maxRetriesPerRequest: null,
+    };
 
 export class CodeSubmissionWorker {
   private worker: Worker;
