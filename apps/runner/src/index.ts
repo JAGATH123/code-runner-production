@@ -27,9 +27,14 @@ async function startRunner() {
     await connectToDatabase();
     console.log('✅ Connected to MongoDB');
 
-    // Initialize Docker executor
-    await DockerExecutor.initialize();
-    console.log('✅ Docker executor initialized');
+    // Initialize Docker executor (skip if SKIP_DOCKER_INIT is set)
+    if (process.env.SKIP_DOCKER_INIT === 'true') {
+      console.log('⚠️  Skipping Docker initialization (SKIP_DOCKER_INIT=true)');
+      console.log('⚠️  Code execution will fail until Docker is available');
+    } else {
+      await DockerExecutor.initialize();
+      console.log('✅ Docker executor initialized');
+    }
 
     // Start BullMQ workers
     executionWorker = new CodeExecutionWorker();
