@@ -4,6 +4,13 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 dotenv.config(); // Load .env as fallback
 
+console.log('=== RUNNER SERVICE ENVIRONMENT CHECK ===');
+console.log('REDIS_URL:', process.env.REDIS_URL ? '✅ SET' : '❌ NOT SET');
+console.log('REDIS_HOST:', process.env.REDIS_HOST || 'not set');
+console.log('REDIS_PORT:', process.env.REDIS_PORT || 'not set');
+console.log('NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('========================================');
+
 import { connectToDatabase } from '@code-runner/shared';
 import { DockerExecutor } from './executors/docker.executor';
 import { CodeExecutionWorker } from './workers/code-execution.worker';
