@@ -2,32 +2,32 @@ import { Worker, Job, ConnectionOptions } from 'bullmq';
 import { CodeExecutionJobData, Models } from '@code-runner/shared';
 import { DockerExecutor } from '../executors/docker.executor';
 
-// Redis connection configuration - use REDIS_URL if available
-console.log('[CodeExecutionWorker] Redis config check:');
-console.log('[CodeExecutionWorker] REDIS_URL:', process.env.REDIS_URL ? `SET (${process.env.REDIS_URL.substring(0, 30)}...)` : '❌ NOT SET');
-console.log('[CodeExecutionWorker] REDIS_HOST:', process.env.REDIS_HOST || 'not set');
-console.log('[CodeExecutionWorker] REDIS_PORT:', process.env.REDIS_PORT || 'not set');
-
-const redisConnection: ConnectionOptions = process.env.REDIS_URL
-  ? {
-      host: new URL(process.env.REDIS_URL).hostname,
-      port: parseInt(new URL(process.env.REDIS_URL).port),
-      password: new URL(process.env.REDIS_URL).password || undefined,
-      maxRetriesPerRequest: null,
-    }
-  : {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD || undefined,
-      maxRetriesPerRequest: null,
-    };
-
-console.log('[CodeExecutionWorker] Using:', process.env.REDIS_URL ? `REDIS_URL (${redisConnection.host}:${redisConnection.port})` : `host ${redisConnection.host}:${redisConnection.port}`);
-
 export class CodeExecutionWorker {
   private worker: Worker;
 
   constructor() {
+    // Redis connection configuration - configured in constructor to ensure env vars are loaded
+    console.log('[CodeExecutionWorker] Redis config check:');
+    console.log('[CodeExecutionWorker] REDIS_URL:', process.env.REDIS_URL ? `SET (${process.env.REDIS_URL.substring(0, 30)}...)` : '❌ NOT SET');
+    console.log('[CodeExecutionWorker] REDIS_HOST:', process.env.REDIS_HOST || 'not set');
+    console.log('[CodeExecutionWorker] REDIS_PORT:', process.env.REDIS_PORT || 'not set');
+
+    const redisConnection: ConnectionOptions = process.env.REDIS_URL
+      ? {
+          host: new URL(process.env.REDIS_URL).hostname,
+          port: parseInt(new URL(process.env.REDIS_URL).port),
+          password: new URL(process.env.REDIS_URL).password || undefined,
+          maxRetriesPerRequest: null,
+        }
+      : {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD || undefined,
+          maxRetriesPerRequest: null,
+        };
+
+    console.log('[CodeExecutionWorker] Using:', process.env.REDIS_URL ? `REDIS_URL (${redisConnection.host}:${redisConnection.port})` : `host ${redisConnection.host}:${redisConnection.port}`);
+
     this.worker = new Worker(
       'code-execution',
       async (job: Job<CodeExecutionJobData>) => {

@@ -1,14 +1,24 @@
 // IMPORTANT: Load environment variables FIRST, before any other imports
 // This ensures REDIS_URL and other env vars are available when modules load
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import path from 'path';
+
+const envLocalPath = path.resolve(process.cwd(), '.env.local');
+console.log('Loading .env.local from:', envLocalPath);
+const result = dotenv.config({ path: envLocalPath });
+if (result.error) {
+  console.log('⚠️  Failed to load .env.local:', result.error.message);
+} else {
+  console.log('✅ Loaded .env.local');
+}
 dotenv.config(); // Load .env as fallback
 
 console.log('=== RUNNER SERVICE ENVIRONMENT CHECK ===');
-console.log('REDIS_URL:', process.env.REDIS_URL ? '✅ SET' : '❌ NOT SET');
+console.log('REDIS_URL:', process.env.REDIS_URL ? `✅ SET (${process.env.REDIS_URL.substring(0, 50)}...)` : '❌ NOT SET');
 console.log('REDIS_HOST:', process.env.REDIS_HOST || 'not set');
 console.log('REDIS_PORT:', process.env.REDIS_PORT || 'not set');
 console.log('NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('CWD:', process.cwd());
 console.log('========================================');
 
 import { connectToDatabase } from '@code-runner/shared';
