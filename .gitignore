@@ -10,7 +10,14 @@ coverage/
 .next/
 out/
 build/
+
+# Build outputs - ignore all dist folders
 dist/
+**/dist/
+apps/api/dist/
+apps/runner/dist/
+apps/web/dist/
+packages/*/dist/
 
 # Production
 *.log
@@ -23,6 +30,10 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+*/.env
+*/.env.local
+*/.env.production
 
 # IDE
 .vscode/
@@ -34,6 +45,7 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+nul
 
 # Debug
 npm-debug.log*
@@ -46,3 +58,12 @@ yarn-error.log*
 
 # Claude temporary files
 tmpclaude*
+**/tmpclaude*
+
+# Next.js cache and build
+apps/web/.next/
+**/.next/
+
+# Package lock files in subfolders (keep only root)
+apps/*/package-lock.json
+packages/*/package-lock.json

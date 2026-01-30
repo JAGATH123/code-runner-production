@@ -1,16 +1,19 @@
 import { Worker, Job, ConnectionOptions } from 'bullmq';
-import { SubmissionJobData, Models } from '@code-runner/shared';
+import { SubmissionJobData, Models, getLogger } from '@code-runner/shared';
 import { DockerExecutor } from '../executors/docker.executor';
+
+const logger = getLogger('code-submission-worker');
 
 export class CodeSubmissionWorker {
   private worker: Worker;
 
   constructor() {
     // Redis connection configuration - configured in constructor to ensure env vars are loaded
-    console.log('[CodeSubmissionWorker] Redis config check:');
-    console.log('[CodeSubmissionWorker] REDIS_URL:', process.env.REDIS_URL ? `SET (${process.env.REDIS_URL.substring(0, 30)}...)` : '❌ NOT SET');
-    console.log('[CodeSubmissionWorker] REDIS_HOST:', process.env.REDIS_HOST || 'not set');
-    console.log('[CodeSubmissionWorker] REDIS_PORT:', process.env.REDIS_PORT || 'not set');
+    logger.info('Initializing CodeSubmissionWorker', {
+      redisUrl: process.env.REDIS_URL ? `SET (${process.env.REDIS_URL.substring(0, 30)}...)` : 'NOT SET',
+      redisHost: process.env.REDIS_HOST || 'not set',
+      redisPort: process.env.REDIS_PORT || 'not set',
+    });
 
     const redisConnection: ConnectionOptions = process.env.REDIS_URL
       ? {
@@ -26,7 +29,11 @@ export class CodeSubmissionWorker {
           maxRetriesPerRequest: null,
         };
 
-    console.log('[CodeSubmissionWorker] Using:', process.env.REDIS_URL ? `REDIS_URL (${redisConnection.host}:${redisConnection.port})` : `host ${redisConnection.host}:${redisConnection.port}`);
+    logger.info('Redis connection configured', {
+      source: process.env.REDIS_URL ? 'REDIS_URL' : 'REDIS_HOST/PORT',
+      host: redisConnection.host,
+      port: redisConnection.port,
+    });
 
     this.worker = new Worker(
       'code-submission',
@@ -47,7 +54,11 @@ export class CodeSubmissionWorker {
   }
 
   private async processJob(job: Job<SubmissionJobData>): Promise<void> {
-    console.log(`[CodeSubmission] Processing grading job ${job.data.jobId} for problem ${job.data.problemId}`);
+    logger.info('Processing grading job', {
+      jobId: job.data.jobId,
+      problemId: job.data.problemId,
+      userId: job.data.userId,
+    });
 
     try {
       // Update status to processing
@@ -88,16 +99,28 @@ export class CodeSubmissionWorker {
         }
       );
 
-      console.log(
-        `[CodeSubmission] Job ${job.data.jobId} completed - ${testResults.passed}/${totalTests} tests passed (${passRate.toFixed(1)}%)`
-      );
+      logger.info('Grading job completed', {
+        jobId: job.data.jobId,
+        passed: testResults.passed,
+        total: totalTests,
+        passRate: passRate.toFixed(1),
+        allPassed,
+        executionTime: testResults.totalExecutionTime,
+      });
 
       // TODO: Update user progress when Progress model is added to shared package
       if (allPassed) {
-        console.log(`[CodeSubmission] All tests passed for user ${job.data.userId} on problem ${job.data.problemId}`);
+        logger.info('All tests passed', {
+          userId: job.data.userId,
+          problemId: job.data.problemId,
+        });
       }
     } catch (error) {
-      console.error(`[CodeSubmission] Job ${job.data.jobId} failed:`, error);
+      logger.error('Grading job failed', {
+        jobId: job.data.jobId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
 
       // Save error to database
       await Models.ExecutionResult.updateOne(
@@ -115,15 +138,22 @@ export class CodeSubmissionWorker {
 
   private setupEventHandlers(): void {
     this.worker.on('completed', (job) => {
-      console.log(`✅ Grading job ${job.id} completed successfully`);
+      logger.info('Grading job completed successfully', { jobId: job.id });
     });
 
     this.worker.on('failed', (job, err) => {
-      console.error(`❌ Grading job ${job?.id} failed:`, err.message);
+      logger.error('Grading job failed', {
+        jobId: job?.id,
+        error: err.message,
+        stack: err.stack,
+      });
     });
 
     this.worker.on('error', (err) => {
-      console.error('Submission worker error:', err);
+      logger.error('Submission worker error', {
+        error: err.message,
+        stack: err.stack,
+      });
     });
   }
 

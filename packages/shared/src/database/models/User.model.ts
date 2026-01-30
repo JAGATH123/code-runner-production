@@ -45,8 +45,6 @@ const UserSchema = new Schema<IUser>({
   collection: 'users',
 });
 
-// Indexes
-UserSchema.index({ username: 1 }, { unique: true });
-UserSchema.index({ email: 1 }, { unique: true });
+// Indexes automatically created by 'unique: true' on username and email fields
 
 export const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

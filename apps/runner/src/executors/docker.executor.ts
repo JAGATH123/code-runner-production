@@ -3,8 +3,14 @@ import { promisify } from 'util';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { getLogger } from '@code-runner/shared';
+import { ContainerPool } from './container-pool';
 
 const execAsync = promisify(exec);
+const logger = getLogger('docker-executor');
+
+// Container pool instance (singleton)
+let containerPool: ContainerPool | null = null;
 
 export interface ExecutionResult {
   stdout: string;
@@ -29,17 +35,30 @@ export class DockerExecutor {
   static async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    console.log('Initializing Docker executor...');
+    logger.info('Initializing Docker executor');
 
     // Ensure Docker image exists
     await this.ensureImageExists();
 
+    // Initialize container pool if enabled
+    if (ContainerPool.isEnabled()) {
+      logger.info('Container pooling enabled - initializing pool');
+      containerPool = new ContainerPool({
+        imageName: this.IMAGE_NAME,
+      });
+      await containerPool.initialize();
+      logger.info('Container pool initialized successfully');
+    } else {
+      logger.info('Container pooling disabled - using per-execution containers');
+    }
+
     this.initialized = true;
-    console.log('✅ Docker executor initialized');
+    logger.info('Docker executor initialized successfully');
   }
 
   /**
    * Execute Python code in a sandboxed Docker container
+   * Uses container pool if enabled for better performance
    */
   static async executeCode(code: string, input: string = ''): Promise<ExecutionResult> {
     const startTime = Date.now();
@@ -49,25 +68,18 @@ export class DockerExecutor {
         await this.initialize();
       }
 
-      // Create container with security constraints
-      const containerName = `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const containerId = await this.createContainer(containerName);
-
-      try {
-        // Execute code in container
-        const result = await this.runCodeInContainer(containerId, code, input);
-        const executionTime = Date.now() - startTime;
-
-        return {
-          ...result,
-          executionTime
-        };
-      } finally {
-        // Cleanup container
-        await this.destroyContainer(containerId);
+      // Use container pool if enabled
+      if (containerPool) {
+        return await this.executeWithPool(code, input, startTime);
+      } else {
+        return await this.executeWithFreshContainer(code, input, startTime);
       }
+
     } catch (error) {
-      console.error('Docker execution error:', error);
+      logger.error('Docker execution error', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       const executionTime = Date.now() - startTime;
 
       return {
@@ -76,6 +88,67 @@ export class DockerExecutor {
         status: 'Error',
         executionTime
       };
+    }
+  }
+
+  /**
+   * Execute using container pool (faster, reuses containers)
+   */
+  private static async executeWithPool(
+    code: string,
+    input: string,
+    startTime: number
+  ): Promise<ExecutionResult> {
+    let pooledContainer = null;
+
+    try {
+      // Acquire container from pool
+      pooledContainer = await containerPool!.acquire();
+
+      // Execute code in pooled container
+      const result = await this.runCodeInContainer(pooledContainer.id, code, input);
+      const executionTime = Date.now() - startTime;
+
+      // Release container back to pool (with cleanup)
+      await containerPool!.release(pooledContainer.id, true);
+
+      return {
+        ...result,
+        executionTime
+      };
+
+    } catch (error) {
+      // If execution failed, release container without cleanup (will be destroyed)
+      if (pooledContainer) {
+        await containerPool!.release(pooledContainer.id, false).catch(() => {});
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Execute using fresh container (original behavior, slower but simpler)
+   */
+  private static async executeWithFreshContainer(
+    code: string,
+    input: string,
+    startTime: number
+  ): Promise<ExecutionResult> {
+    const containerName = `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const containerId = await this.createContainer(containerName);
+
+    try {
+      // Execute code in container
+      const result = await this.runCodeInContainer(containerId, code, input);
+      const executionTime = Date.now() - startTime;
+
+      return {
+        ...result,
+        executionTime
+      };
+    } finally {
+      // Cleanup container
+      await this.destroyContainer(containerId);
     }
   }
 
@@ -146,7 +219,10 @@ export class DockerExecutor {
 
       return containerId;
     } catch (error) {
-      console.error('Failed to create container:', error);
+      logger.error('Failed to create container', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new Error(`Container creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -156,7 +232,10 @@ export class DockerExecutor {
       await execAsync(`docker stop -t 2 ${containerId}`).catch(() => {});
       await execAsync(`docker rm -f ${containerId}`);
     } catch (error) {
-      console.warn(`Failed to destroy container ${containerId}:`, error);
+      logger.warn('Failed to destroy container', {
+        containerId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -232,7 +311,10 @@ export class DockerExecutor {
         status: stderr.trim() ? 'Error' : 'Success'
       };
     } catch (error) {
-      console.error('Code execution error:', error);
+      logger.error('Code execution error', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
 
       return {
         stdout: '',
@@ -245,9 +327,9 @@ export class DockerExecutor {
   private static async ensureImageExists(): Promise<void> {
     try {
       await execAsync(`docker inspect ${this.IMAGE_NAME}`);
-      console.log(`Docker image ${this.IMAGE_NAME} exists`);
+      logger.info('Docker image exists', { image: this.IMAGE_NAME });
     } catch {
-      console.log(`Building Docker image ${this.IMAGE_NAME}...`);
+      logger.info('Building Docker image', { image: this.IMAGE_NAME });
 
       // Assume Dockerfile is in project root
       const projectRoot = process.cwd();
@@ -255,7 +337,39 @@ export class DockerExecutor {
         cwd: projectRoot
       });
 
-      console.log(`Docker image ${this.IMAGE_NAME} built successfully`);
+      logger.info('Docker image built successfully', { image: this.IMAGE_NAME });
     }
+  }
+
+  /**
+   * Get container pool statistics (for monitoring)
+   */
+  static getPoolStats() {
+    if (!containerPool) {
+      return {
+        enabled: false,
+        reason: 'Container pooling is disabled'
+      };
+    }
+
+    return {
+      enabled: true,
+      ...containerPool.getStats()
+    };
+  }
+
+  /**
+   * Shutdown container pool gracefully
+   */
+  static async shutdown(): Promise<void> {
+    logger.info('Shutting down Docker executor');
+
+    if (containerPool) {
+      await containerPool.shutdown();
+      containerPool = null;
+    }
+
+    this.initialized = false;
+    logger.info('Docker executor shutdown complete');
   }
 }

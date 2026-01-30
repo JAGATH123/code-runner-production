@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Models } from '@code-runner/shared';
 import { optionalAuthMiddleware } from '../middleware/auth.middleware';
 import { apiLimiter } from '../middleware/rateLimit.middleware';
+import { unescapeObject } from '../utils/unescape';
 
 const router = Router();
 
@@ -42,7 +43,9 @@ router.get('/:id', optionalAuthMiddleware, async (req: Request, res: Response) =
       return res.status(404).json({ error: 'Problem not found' });
     }
 
-    res.json(problem);
+    // Unescape special characters (convert \n to actual newlines, etc.)
+    const unescapedProblem = unescapeObject(problem);
+    res.json(unescapedProblem);
   } catch (error) {
     console.error('Error fetching problem:', error);
     res.status(500).json({ error: 'Failed to fetch problem' });
@@ -65,9 +68,11 @@ router.get('/:id/test-cases', optionalAuthMiddleware, async (req: Request, res: 
     const testCases = await Models.TestCase.find({
       problem_id: problemId,
       is_hidden: false,
-    }).sort({ test_case_id: 1 });
+    }).sort({ test_case_id: 1 }).lean();
 
-    res.json(testCases);
+    // Unescape special characters in test cases
+    const unescapedTestCases = unescapeObject(testCases);
+    res.json(unescapedTestCases);
   } catch (error) {
     console.error('Error fetching test cases:', error);
     res.status(500).json({ error: 'Failed to fetch test cases' });
@@ -90,9 +95,11 @@ router.get('/:id/test-cases/all', async (req: Request, res: Response) => {
     // Get all test cases including hidden ones
     const testCases = await Models.TestCase.find({
       problem_id: problemId,
-    }).sort({ test_case_id: 1 });
+    }).sort({ test_case_id: 1 }).lean();
 
-    res.json(testCases);
+    // Unescape special characters in test cases (important for runner)
+    const unescapedTestCases = unescapeObject(testCases);
+    res.json(unescapedTestCases);
   } catch (error) {
     console.error('Error fetching test cases:', error);
     res.status(500).json({ error: 'Failed to fetch test cases' });

@@ -2,16 +2,19 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { Models, CodeExecutionJobData, SubmissionJobData } from '@code-runner/shared';
 import { optionalAuthMiddleware, authMiddleware } from '../middleware/auth.middleware';
-import { executionLimiter } from '../middleware/rateLimit.middleware';
+import { executionLimiter, dailyExecutionLimiter } from '../middleware/rateLimit.middleware';
 import { codeExecutionQueue, codeSubmissionQueue } from '../queue/queue.config';
 
 const router = Router();
+
+// Queue backpressure settings
+const MAX_QUEUE_DEPTH = parseInt(process.env.MAX_QUEUE_DEPTH || '200');
 
 /**
  * POST /execution/submit
  * Submit code for execution (returns jobId immediately)
  */
-router.post('/submit', executionLimiter, optionalAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/submit', executionLimiter, dailyExecutionLimiter, optionalAuthMiddleware, async (req: Request, res: Response) => {
   try {
     const { code, problemId, userSessionId } = req.body;
 
@@ -26,6 +29,19 @@ router.post('/submit', executionLimiter, optionalAuthMiddleware, async (req: Req
       return res.status(400).json({
         error: 'Validation Error',
         message: 'Code is too long (max 50,000 characters)',
+      });
+    }
+
+    // Check queue depth (backpressure) - reject if system is overloaded
+    const jobCounts = await codeExecutionQueue.getJobCounts();
+    const queueDepth = jobCounts.waiting + jobCounts.active;
+
+    if (queueDepth >= MAX_QUEUE_DEPTH) {
+      return res.status(503).json({
+        error: 'System Busy',
+        message: 'System is currently overloaded. Please try again in a few seconds.',
+        queueDepth,
+        estimatedWait: `${Math.ceil(queueDepth / 10)} seconds`,
       });
     }
 
@@ -111,7 +127,7 @@ router.get('/result/:jobId', async (req: Request, res: Response) => {
  * POST /execution/submit/grade
  * Submit code for grading (runs against all test cases)
  */
-router.post('/submit/grade', executionLimiter, authMiddleware, async (req: Request, res: Response) => {
+router.post('/submit/grade', executionLimiter, dailyExecutionLimiter, authMiddleware, async (req: Request, res: Response) => {
   try {
     const { code, problemId } = req.body;
 
@@ -126,6 +142,19 @@ router.post('/submit/grade', executionLimiter, authMiddleware, async (req: Reque
       return res.status(400).json({
         error: 'Validation Error',
         message: 'Problem ID is required',
+      });
+    }
+
+    // Check queue depth (backpressure) - reject if system is overloaded
+    const jobCounts = await codeSubmissionQueue.getJobCounts();
+    const queueDepth = jobCounts.waiting + jobCounts.active;
+
+    if (queueDepth >= MAX_QUEUE_DEPTH) {
+      return res.status(503).json({
+        error: 'System Busy',
+        message: 'Grading system is currently overloaded. Please try again in a few seconds.',
+        queueDepth,
+        estimatedWait: `${Math.ceil(queueDepth / 10)} seconds`,
       });
     }
 

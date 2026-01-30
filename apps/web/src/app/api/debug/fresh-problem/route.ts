@@ -5,6 +5,11 @@ import { NextResponse } from 'next/server';
  * GET /api/debug/fresh-problem?id=52
  */
 export async function GET(request: Request) {
+  // SECURITY: Block in production - debug endpoint
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const problemId = searchParams.get('id') || '52';

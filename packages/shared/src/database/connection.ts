@@ -17,7 +17,11 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   }
 
   try {
-    const db = await mongoose.connect(MONGODB_URI, {
+    // Re-read MONGODB_URI at runtime (not module load time)
+    const runtimeURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/code-runner';
+    console.log('🔍 Connecting to MongoDB:', runtimeURI.includes('localhost') ? 'localhost:27017' : 'Atlas Cloud');
+
+    const db = await mongoose.connect(runtimeURI, {
       maxPoolSize: 20,
       minPoolSize: 5,
       maxIdleTimeMS: 30000,

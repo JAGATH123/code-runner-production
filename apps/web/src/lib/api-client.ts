@@ -157,18 +157,33 @@ export const api = {
     getById: (id: number) => apiClient.get(`/sessions/${id}`),
   },
 
-  // Code Execution (NEW - Queue-based)
+  // Code Execution (Queue-based via Express API)
   execution: {
     // Submit code for execution (returns jobId)
-    submit: (code: string, problemId?: number, userSessionId?: string) =>
-      apiClient.post('/submit', { code, problemId, userSessionId }),
+    submit: (code: string, input?: string, images?: File[], userSessionId?: string) =>
+      apiClient.post('/execution/submit', { code, input, images, userSessionId }),
 
     // Get execution result by jobId
-    getResult: (jobId: string) => apiClient.get(`/results/${jobId}`),
+    getResult: (jobId: string) => apiClient.get(`/execution/result/${jobId}`),
 
-    // Submit code for grading
+    // Submit code for grading against test cases
     submitForGrading: (code: string, problemId: number) =>
-      apiClient.post('/submit/grade', { code, problemId }),
+      apiClient.post('/execution/submit/grade', { code, problemId }),
+
+    // Poll for result with timeout
+    waitForResult: async (jobId: string, maxAttempts = 30, interval = 1000) => {
+      for (let i = 0; i < maxAttempts; i++) {
+        const result = await apiClient.get<any>(`/execution/result/${jobId}`);
+
+        if (result.status === 'completed' || result.status === 'failed') {
+          return result;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+
+      throw new Error('Timeout waiting for execution result');
+    },
   },
 
   // Progress

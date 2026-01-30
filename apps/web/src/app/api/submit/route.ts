@@ -1,59 +1,31 @@
 import { NextResponse } from 'next/server';
-import { DataService } from '@/lib/database/data-service';
-import { SubmissionExecutor } from '@/lib/execution/submission-executor';
-import { GPUContainerPool } from '@/lib/execution/gpu-container-pool';
-import type { SubmissionResult } from '@/lib/types';
 
-type TestCase = { input: string; expected_output: string };
-
-// Initialize GPU-aware container pool on startup
-let poolInitialized = false;
-
-async function ensurePoolInitialized() {
-  if (!poolInitialized) {
-    await GPUContainerPool.initialize();
-    poolInitialized = true;
-  }
-}
-
-// Real Python submission endpoint using Docker sandbox
+/**
+ * DEPRECATED: This endpoint is no longer supported.
+ *
+ * This endpoint bypassed the proper queue-based execution system,
+ * causing inconsistent behavior and making the system impossible to scale.
+ *
+ * Use the proper API instead:
+ * POST /api/execution/submit/grade (via Express API at process.env.NEXT_PUBLIC_API_URL)
+ */
 export async function POST(request: Request) {
-  try {
-    // Ensure GPU-aware pool is initialized
-    await ensurePoolInitialized();
-    const { problemId, code, language } = await request.json();
-
-    if (language !== 'python') {
-      return NextResponse.json({ error: 'Only Python is supported' }, { status: 400 });
+  return NextResponse.json(
+    {
+      error: 'This endpoint is deprecated and no longer supported',
+      message: 'Please update your code to use the proper execution API',
+      migration: {
+        old: 'POST /api/submit',
+        new: 'POST ${NEXT_PUBLIC_API_URL}/execution/submit/grade',
+        documentation: 'See IMPLEMENTATION_PLAN.md Phase 1 for details'
+      }
+    },
+    {
+      status: 410, // 410 Gone - resource permanently removed
+      headers: {
+        'X-Deprecated': 'true',
+        'X-Deprecation-Date': '2025-01-29',
+      }
     }
-
-    if (!code || typeof code !== 'string') {
-      return NextResponse.json({ error: 'Code is required' }, { status: 400 });
-    }
-
-    const cases: TestCase[] = await DataService.getTestCasesForProblem(problemId);
-
-    if (!cases) {
-      return NextResponse.json({ error: 'Problem or test cases not found' }, { status: 404 });
-    }
-
-    // Get problem details to check if it's a Pygame problem
-    const problem = await DataService.getProblemById(problemId);
-    const isPygameProblem = problem && (problem.session_id === 42 || problem.session_id === 43);
-
-    // Execute code against all test cases
-    const summary = await SubmissionExecutor.executeSubmission(code, cases, isPygameProblem);
-
-    return NextResponse.json({ summary });
-  } catch (error) {
-    console.error('Submission execution error:', error);
-    return NextResponse.json({ 
-      error: 'An unexpected error occurred during submission evaluation.',
-      summary: {
-        status: 'Wrong Answer',
-        passed: 0,
-        total: 0
-      } as SubmissionResult
-    }, { status: 500 });
-  }
+  );
 }

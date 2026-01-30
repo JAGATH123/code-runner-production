@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader, Play, Clock, Zap, FileInput, FileOutput, Terminal, Cpu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useGlobalAudio } from '@/contexts/AudioContext';
+import { api } from '@/lib/api-client';
 
 const defaultCode = `# NEURAL NETWORK INITIALIZATION
 def main():
@@ -43,17 +44,22 @@ export function FreeCompiler() {
       setActiveTab('result');
 
       try {
-        const response = await fetch('/api/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, input: customInput, language: 'python' }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-            setResult(data);
-        } else {
-            throw new Error(data.error || 'Failed to run code.');
-        }
+        // Submit code to queue-based API (returns jobId)
+        const submission = await api.execution.submit(code, customInput);
+
+        // Poll for result
+        setResult({ stdout: '', stderr: '', status: 'Queued...', executionTime: null });
+        const resultData = await api.execution.waitForResult(submission.jobId);
+
+        // Extract execution result from API response
+        const data: ExecutionResult = resultData.result || {
+          stdout: resultData.stdout || '',
+          stderr: resultData.stderr || resultData.error || '',
+          status: resultData.status === 'completed' ? 'Success' : 'Error',
+          executionTime: resultData.executionTime || null,
+        };
+
+        setResult(data);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
         setResult({ stdout: '', stderr: errorMessage, status: 'Error', executionTime: null });

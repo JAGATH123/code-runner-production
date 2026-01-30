@@ -279,39 +279,57 @@ export function CompilerUI({ problem }: CompilerUIProps) {
       setPygameConsoleOutput([]); // Clear previous pygame console output
       setActiveTab('result');
 
-      // Convert uploaded images to base64
-      const images = await Promise.all(
-        uploadedImages.map(async (file) => {
-          const base64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-          });
-          return {
-            name: file.name,
-            data: base64
-          };
-        })
-      );
+      try {
+        // Convert uploaded images to base64
+        const images = await Promise.all(
+          uploadedImages.map(async (file) => {
+            const base64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(file);
+            });
+            return {
+              name: file.name,
+              data: base64
+            };
+          })
+        );
 
-      const response = await fetch('/api/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        // Submit code to queue-based API (returns jobId)
+        const submission = await api.execution.submit(
           code,
-          input: customInput,
-          language: 'python',
+          customInput,
           images,
-          userSessionId: isFileHandlingSession ? userSessionId : undefined
-        }),
-      });
-      const data: ExecutionResult = await response.json();
-      setResult(data);
+          isFileHandlingSession ? userSessionId : undefined
+        );
 
-      // If Pygame game with initial stdout, add it to pygame console output
-      if (data.pygameBundle && data.stdout) {
-        const initialOutput = data.stdout.trim().split('\n');
-        setPygameConsoleOutput(initialOutput);
+        // Poll for result
+        setResult({ stdout: '', stderr: '', status: 'Queued...', executionTime: null });
+        const resultData = await api.execution.waitForResult(submission.jobId);
+
+        // Extract execution result from API response
+        const data: ExecutionResult = resultData.result || {
+          stdout: resultData.stdout || '',
+          stderr: resultData.stderr || resultData.error || '',
+          status: resultData.status === 'completed' ? 'Success' : 'Error',
+          executionTime: resultData.executionTime || null,
+        };
+
+        setResult(data);
+
+        // If Pygame game with initial stdout, add it to pygame console output
+        if (data.pygameBundle && data.stdout) {
+          const initialOutput = data.stdout.trim().split('\n');
+          setPygameConsoleOutput(initialOutput);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Execution failed';
+        setResult({
+          stdout: '',
+          stderr: errorMessage,
+          status: 'Error',
+          executionTime: null
+        });
       }
     });
   };
@@ -324,34 +342,39 @@ export function CompilerUI({ problem }: CompilerUIProps) {
       setActiveTab('result');
 
       try {
-        const response = await fetch('/api/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ problemId: problem.problem_id, code, language: 'python' }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-          setSubmissionResult(data.summary);
+        // Submit code for grading via queue-based API
+        const submission = await api.execution.submitForGrading(code, problem.problem_id);
+
+        // Poll for grading result
+        setResult({ stdout: '', stderr: '', status: 'Grading...', executionTime: null });
+        const resultData = await api.execution.waitForResult(submission.jobId);
+
+        // Extract submission result
+        const submissionSummary = resultData.submissionResult || resultData.result?.summary;
+
+        if (submissionSummary) {
+          setSubmissionResult(submissionSummary);
 
           // Mark problem and level as completed if all tests pass
-          if (data.summary.status === 'Accepted') {
+          if (submissionSummary.status === 'Accepted') {
             progress.markProblemComplete(problem.problem_id);
             progress.markLevelComplete(problem.age_group, problem.level_number);
           }
 
           toast({
-            title: `Submission ${data.summary.status}`,
-            description: `Passed ${data.summary.passed}/${data.summary.total} test cases.`,
-            variant: data.summary.status === 'Accepted' ? 'default' : 'destructive',
+            title: `Submission ${submissionSummary.status}`,
+            description: `Passed ${submissionSummary.passed}/${submissionSummary.total} test cases.`,
+            variant: submissionSummary.status === 'Accepted' ? 'default' : 'destructive',
           });
 
           // If Pygame submission with output, add to console
-          if (data.executionResult?.pygameBundle && data.executionResult?.stdout) {
-            const initialOutput = data.executionResult.stdout.trim().split('\n');
+          const executionResult = resultData.result;
+          if (executionResult?.pygameBundle && executionResult?.stdout) {
+            const initialOutput = executionResult.stdout.trim().split('\n');
             setPygameConsoleOutput(initialOutput);
           }
         } else {
-            throw new Error(data.error || 'Failed to submit.');
+          throw new Error('No submission result received');
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';

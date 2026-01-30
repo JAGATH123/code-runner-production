@@ -1,0 +1,13 @@
+# =============================================================================
+# Python Sandbox Requirements
+# =============================================================================
+# This file lists Python packages available to student code
+# Keep minimal for fast builds and reduced attack surface
+
+# No external packages initially
+# Add packages based on curriculum needs:
+# - numpy
+# - pandas
+# - matplotlib
+# - pygame
+# etc.

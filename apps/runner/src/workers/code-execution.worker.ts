@@ -1,16 +1,19 @@
 import { Worker, Job, ConnectionOptions } from 'bullmq';
-import { CodeExecutionJobData, Models } from '@code-runner/shared';
+import { CodeExecutionJobData, Models, getLogger } from '@code-runner/shared';
 import { DockerExecutor } from '../executors/docker.executor';
+
+const logger = getLogger('code-execution-worker');
 
 export class CodeExecutionWorker {
   private worker: Worker;
 
   constructor() {
     // Redis connection configuration - configured in constructor to ensure env vars are loaded
-    console.log('[CodeExecutionWorker] Redis config check:');
-    console.log('[CodeExecutionWorker] REDIS_URL:', process.env.REDIS_URL ? `SET (${process.env.REDIS_URL.substring(0, 30)}...)` : '❌ NOT SET');
-    console.log('[CodeExecutionWorker] REDIS_HOST:', process.env.REDIS_HOST || 'not set');
-    console.log('[CodeExecutionWorker] REDIS_PORT:', process.env.REDIS_PORT || 'not set');
+    logger.info('Initializing CodeExecutionWorker', {
+      redisUrl: process.env.REDIS_URL ? `SET (${process.env.REDIS_URL.substring(0, 30)}...)` : 'NOT SET',
+      redisHost: process.env.REDIS_HOST || 'not set',
+      redisPort: process.env.REDIS_PORT || 'not set',
+    });
 
     const redisConnection: ConnectionOptions = process.env.REDIS_URL
       ? {
@@ -26,7 +29,11 @@ export class CodeExecutionWorker {
           maxRetriesPerRequest: null,
         };
 
-    console.log('[CodeExecutionWorker] Using:', process.env.REDIS_URL ? `REDIS_URL (${redisConnection.host}:${redisConnection.port})` : `host ${redisConnection.host}:${redisConnection.port}`);
+    logger.info('Redis connection configured', {
+      source: process.env.REDIS_URL ? 'REDIS_URL' : 'REDIS_HOST/PORT',
+      host: redisConnection.host,
+      port: redisConnection.port,
+    });
 
     this.worker = new Worker(
       'code-execution',
@@ -47,7 +54,7 @@ export class CodeExecutionWorker {
   }
 
   private async processJob(job: Job<CodeExecutionJobData>): Promise<void> {
-    console.log(`[CodeExecution] Processing job ${job.data.jobId}`);
+    logger.info('Processing code execution job', { jobId: job.data.jobId });
 
     try {
       // Update status to processing
@@ -77,9 +84,17 @@ export class CodeExecutionWorker {
         }
       );
 
-      console.log(`[CodeExecution] Job ${job.data.jobId} completed - ${result.status}`);
+      logger.info('Code execution job completed', {
+        jobId: job.data.jobId,
+        status: result.status,
+        executionTime: result.executionTime,
+      });
     } catch (error) {
-      console.error(`[CodeExecution] Job ${job.data.jobId} failed:`, error);
+      logger.error('Code execution job failed', {
+        jobId: job.data.jobId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
 
       // Save error to database
       await Models.ExecutionResult.updateOne(
@@ -97,15 +112,22 @@ export class CodeExecutionWorker {
 
   private setupEventHandlers(): void {
     this.worker.on('completed', (job) => {
-      console.log(`✅ Job ${job.id} completed successfully`);
+      logger.info('Job completed successfully', { jobId: job.id });
     });
 
     this.worker.on('failed', (job, err) => {
-      console.error(`❌ Job ${job?.id} failed:`, err.message);
+      logger.error('Job failed', {
+        jobId: job?.id,
+        error: err.message,
+        stack: err.stack,
+      });
     });
 
     this.worker.on('error', (err) => {
-      console.error('Worker error:', err);
+      logger.error('Worker error', {
+        error: err.message,
+        stack: err.stack,
+      });
     });
   }
 

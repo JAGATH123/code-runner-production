@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 const envLocalPath = path.resolve(process.cwd(), '.env.local');
+// Note: console.log used here because logger not yet initialized
 console.log('Loading .env.local from:', envLocalPath);
 const result = dotenv.config({ path: envLocalPath });
 if (result.error) {
@@ -13,91 +14,145 @@ if (result.error) {
 }
 dotenv.config(); // Load .env as fallback
 
-console.log('=== RUNNER SERVICE ENVIRONMENT CHECK ===');
-console.log('REDIS_URL:', process.env.REDIS_URL ? `✅ SET (${process.env.REDIS_URL.substring(0, 50)}...)` : '❌ NOT SET');
-console.log('REDIS_HOST:', process.env.REDIS_HOST || 'not set');
-console.log('REDIS_PORT:', process.env.REDIS_PORT || 'not set');
-console.log('NODE_ENV:', process.env.NODE_ENV || 'not set');
-console.log('CWD:', process.cwd());
-console.log('========================================');
-
-import { connectToDatabase } from '@code-runner/shared';
+import { connectToDatabase, getLogger } from '@code-runner/shared';
 import { DockerExecutor } from './executors/docker.executor';
 import { CodeExecutionWorker } from './workers/code-execution.worker';
 import { CodeSubmissionWorker } from './workers/code-submission.worker';
+
+// Initialize logger
+const logger = getLogger('runner');
 
 let executionWorker: CodeExecutionWorker;
 let submissionWorker: CodeSubmissionWorker;
 
 async function startRunner() {
   try {
-    console.log('🚀 Starting Code Runner Worker Service...');
+    logger.info('Starting Code Runner Worker Service');
+
+    // Log environment configuration
+    logger.info('Environment configuration', {
+      redisUrl: process.env.REDIS_URL ? `SET (${process.env.REDIS_URL.substring(0, 50)}...)` : 'NOT SET',
+      redisHost: process.env.REDIS_HOST || 'not set',
+      redisPort: process.env.REDIS_PORT || 'not set',
+      nodeEnv: process.env.NODE_ENV || 'development',
+      cwd: process.cwd(),
+    });
 
     // Connect to MongoDB
     await connectToDatabase();
-    console.log('✅ Connected to MongoDB');
+    logger.info('Connected to MongoDB successfully');
 
     // Initialize Docker executor (skip if SKIP_DOCKER_INIT is set)
     if (process.env.SKIP_DOCKER_INIT === 'true') {
-      console.log('⚠️  Skipping Docker initialization (SKIP_DOCKER_INIT=true)');
-      console.log('⚠️  Code execution will fail until Docker is available');
+      logger.warn('Skipping Docker initialization (SKIP_DOCKER_INIT=true)');
+      logger.warn('Code execution will fail until Docker is available');
     } else {
       await DockerExecutor.initialize();
-      console.log('✅ Docker executor initialized');
+      logger.info('Docker executor initialized');
     }
 
     // Start BullMQ workers
     executionWorker = new CodeExecutionWorker();
-    console.log('✅ Code execution worker started');
+    logger.info('Code execution worker started');
 
     submissionWorker = new CodeSubmissionWorker();
-    console.log('✅ Code submission worker started');
+    logger.info('Code submission worker started');
 
-    console.log('🎉 Runner service is ready to process jobs!');
-    console.log('Environment:', process.env.NODE_ENV || 'development');
+    logger.info('Runner service is ready to process jobs', {
+      environment: process.env.NODE_ENV || 'development',
+    });
+
+    // Log pool stats periodically (every 5 minutes)
+    setInterval(() => {
+      const poolStats = DockerExecutor.getPoolStats();
+      if (poolStats.enabled) {
+        logger.info('Container pool statistics', poolStats);
+      }
+    }, 5 * 60 * 1000);
+
+    // Log initial pool stats
+    const initialPoolStats = DockerExecutor.getPoolStats();
+    logger.info('Container pool status', initialPoolStats);
+
   } catch (error) {
-    console.error('❌ Failed to start runner service:', error);
+    logger.error('Failed to start runner service', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 }
 
 // Graceful shutdown
-async function shutdown() {
-  console.log('\n🛑 Shutting down runner service...');
+let isShuttingDown = false;
+
+async function shutdown(signal: string) {
+  if (isShuttingDown) {
+    logger.warn('Shutdown already in progress');
+    return;
+  }
+
+  isShuttingDown = true;
+  logger.info('Received shutdown signal', { signal });
 
   try {
+    // Close workers (they will finish current jobs)
     if (executionWorker) {
+      logger.info('Closing code execution worker (finishing current jobs)...');
       await executionWorker.close();
-      console.log('✅ Code execution worker closed');
+      logger.info('Code execution worker closed');
     }
 
     if (submissionWorker) {
+      logger.info('Closing code submission worker (finishing current jobs)...');
       await submissionWorker.close();
-      console.log('✅ Code submission worker closed');
+      logger.info('Code submission worker closed');
     }
 
-    console.log('✅ Runner service shutdown complete');
+    // Shutdown Docker executor and container pool
+    logger.info('Shutting down Docker executor and container pool...');
+    await DockerExecutor.shutdown();
+    logger.info('Docker executor shutdown complete');
+
+    // Close MongoDB connection
+    const mongoose = await import('mongoose');
+    if (mongoose.connection.readyState !== 0) {
+      logger.info('Closing MongoDB connection...');
+      await mongoose.connection.close();
+      logger.info('MongoDB connection closed');
+    }
+
+    logger.info('Runner service shutdown complete');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error during shutdown:', error);
+    logger.error('Error during shutdown', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     process.exit(1);
   }
 }
 
 // Handle shutdown signals
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  shutdown();
+  logger.error('Unhandled Promise Rejection', {
+    reason: String(reason),
+    promise: String(promise),
+  });
+  shutdown('unhandledRejection');
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  shutdown();
+  logger.error('Uncaught Exception', {
+    error: error.message,
+    stack: error.stack,
+  });
+  shutdown('uncaughtException');
 });
 
 // Start the runner service

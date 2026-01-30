@@ -6,6 +6,11 @@ import { DataService } from '@/lib/database/data-service';
  * GET /api/debug/db-info?problemId=52
  */
 export async function GET(request: Request) {
+  // SECURITY: Block in production - exposes database info
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const problemId = parseInt(searchParams.get('problemId') || '52');

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Models } from '@code-runner/shared';
 import { optionalAuthMiddleware } from '../middleware/auth.middleware';
 import { apiLimiter } from '../middleware/rateLimit.middleware';
+import { unescapeObject } from '../utils/unescape';
 
 const router = Router();
 
@@ -191,7 +192,9 @@ router.get('/:age_group', optionalAuthMiddleware, async (req: Request, res: Resp
       };
     });
 
-    res.json(formattedLevels);
+    // Unescape special characters in all problem data
+    const unescapedLevels = unescapeObject(formattedLevels);
+    res.json(unescapedLevels);
   } catch (error) {
     console.error('Error fetching levels:', error);
     res.status(500).json({ error: 'Failed to fetch levels' });
