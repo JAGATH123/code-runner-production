@@ -326,18 +326,37 @@ export class DockerExecutor {
 
   private static async ensureImageExists(): Promise<void> {
     try {
-      await execAsync(`docker inspect ${this.IMAGE_NAME}`);
-      logger.info('Docker image exists', { image: this.IMAGE_NAME });
-    } catch {
-      logger.info('Building Docker image', { image: this.IMAGE_NAME });
+      // Check if image exists using docker images command
+      const { stdout } = await execAsync(`docker images -q ${this.IMAGE_NAME}`);
+      if (stdout.trim()) {
+        logger.info('Docker image exists', { image: this.IMAGE_NAME });
+        return;
+      }
+    } catch (error) {
+      logger.warn('Failed to check Docker image', { error: String(error) });
+    }
 
-      // Assume Dockerfile is in project root
-      const projectRoot = process.cwd();
-      await execAsync(`docker build -t ${this.IMAGE_NAME} -f Dockerfile .`, {
-        cwd: projectRoot
+    // Image doesn't exist, try to build it
+    logger.info('Building Docker image', { image: this.IMAGE_NAME });
+
+    // Dockerfile is in the sandbox subdirectory
+    const sandboxPath = join(process.cwd(), 'sandbox');
+    try {
+      await execAsync(`docker build -t ${this.IMAGE_NAME} .`, {
+        cwd: sandboxPath
       });
-
       logger.info('Docker image built successfully', { image: this.IMAGE_NAME });
+    } catch (buildError) {
+      // If build fails, check if image was built externally
+      try {
+        const { stdout } = await execAsync(`docker images -q ${this.IMAGE_NAME}`);
+        if (stdout.trim()) {
+          logger.info('Docker image found (built externally)', { image: this.IMAGE_NAME });
+          return;
+        }
+      } catch {}
+
+      throw new Error(`Failed to build Docker image: ${buildError instanceof Error ? buildError.message : String(buildError)}`);
     }
   }
 
