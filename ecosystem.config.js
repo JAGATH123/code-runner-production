@@ -1,20 +1,24 @@
 // PM2 Configuration for VPS Deployment
 // This runs multiple API and Runner instances for high availability
 
+const path = require('path');
+const PROJECT_ROOT = '/var/www/code-runner';
+
 module.exports = {
   apps: [
     // API Instances (2 instances for failover)
     {
       name: 'api-1',
-      script: './apps/api/dist/index.js',
+      script: './dist/index.js',
+      cwd: path.join(PROJECT_ROOT, 'apps/api'),
       instances: 1,
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
         PORT: 4000,
       },
-      error_file: './logs/api-1-error.log',
-      out_file: './logs/api-1-out.log',
+      error_file: path.join(PROJECT_ROOT, 'logs/api-1-error.log'),
+      out_file: path.join(PROJECT_ROOT, 'logs/api-1-out.log'),
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       autorestart: true,
       max_restarts: 10,
@@ -22,15 +26,16 @@ module.exports = {
     },
     {
       name: 'api-2',
-      script: './apps/api/dist/index.js',
+      script: './dist/index.js',
+      cwd: path.join(PROJECT_ROOT, 'apps/api'),
       instances: 1,
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
         PORT: 4001,
       },
-      error_file: './logs/api-2-error.log',
-      out_file: './logs/api-2-out.log',
+      error_file: path.join(PROJECT_ROOT, 'logs/api-2-error.log'),
+      out_file: path.join(PROJECT_ROOT, 'logs/api-2-out.log'),
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       autorestart: true,
       max_restarts: 10,
@@ -40,7 +45,8 @@ module.exports = {
     // Runner Instances (2 instances for load distribution)
     {
       name: 'runner-1',
-      script: './apps/runner/dist/index.js',
+      script: './dist/index.js',
+      cwd: path.join(PROJECT_ROOT, 'apps/runner'),
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -55,8 +61,8 @@ module.exports = {
         WORKER_CONCURRENCY_EXECUTION: 3,
         WORKER_CONCURRENCY_SUBMISSION: 2,
       },
-      error_file: './logs/runner-1-error.log',
-      out_file: './logs/runner-1-out.log',
+      error_file: path.join(PROJECT_ROOT, 'logs/runner-1-error.log'),
+      out_file: path.join(PROJECT_ROOT, 'logs/runner-1-out.log'),
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       autorestart: true,
       max_restarts: 10,
@@ -64,7 +70,8 @@ module.exports = {
     },
     {
       name: 'runner-2',
-      script: './apps/runner/dist/index.js',
+      script: './dist/index.js',
+      cwd: path.join(PROJECT_ROOT, 'apps/runner'),
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -79,8 +86,8 @@ module.exports = {
         WORKER_CONCURRENCY_EXECUTION: 3,
         WORKER_CONCURRENCY_SUBMISSION: 2,
       },
-      error_file: './logs/runner-2-error.log',
-      out_file: './logs/runner-2-out.log',
+      error_file: path.join(PROJECT_ROOT, 'logs/runner-2-error.log'),
+      out_file: path.join(PROJECT_ROOT, 'logs/runner-2-out.log'),
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       autorestart: true,
       max_restarts: 10,
