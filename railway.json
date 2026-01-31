@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd apps/web && rm -rf node_modules && npm install && npm run build && mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public"
+    "buildCommand": "cd apps/web && rm -rf node_modules && npm install && npm run build && cp -r .next/static .next/standalone/apps/web/.next/static && cp -r public .next/standalone/apps/web/public"
   },
   "deploy": {
     "startCommand": "cd apps/web && PORT=${PORT:-8080} node .next/standalone/apps/web/server.js",
