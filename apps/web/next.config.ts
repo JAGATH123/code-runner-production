@@ -2,7 +2,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'standalone',
+  // output: 'standalone', // Disabled - causing issues with Railway monorepo
   devIndicators: false,
   typescript: {
     ignoreBuildErrors: true,
