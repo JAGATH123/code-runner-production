@@ -8,7 +8,10 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "cd ../.. && npm run build:web"
+  "cd apps/web && rm -rf .next",
+  "cd ../.. && npm run build:web",
+  "chmod +x fix-routes-manifest.sh",
+  "./fix-routes-manifest.sh"
 ]
 
 [start]
