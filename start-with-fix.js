@@ -10,9 +10,24 @@ console.log('🔧 Checking routes-manifest.json...');
 if (fs.existsSync(manifestPath)) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   
-  if (!manifest.dataRoutes) {
-    console.log('⚠️  Adding missing dataRoutes property...');
-    manifest.dataRoutes = [];
+  let fixed = false;
+  
+  // Add all missing properties that Next.js expects
+  const requiredProperties = {
+    dataRoutes: [],
+    dynamicRoutes: [],
+    staticRoutes: []
+  };
+
+  for (const [prop, defaultValue] of Object.entries(requiredProperties)) {
+    if (!manifest[prop]) {
+      console.log(`  ➕ Adding missing ${prop}...`);
+      manifest[prop] = defaultValue;
+      fixed = true;
+    }
+  }
+
+  if (fixed) {
     fs.writeFileSync(manifestPath, JSON.stringify(manifest));
     console.log('✅ Fixed routes-manifest.json');
   } else {

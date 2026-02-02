@@ -1,38 +1,65 @@
 #!/usr/bin/env node
-// Fix routes-manifest.json - add missing dataRoutes property
+/**
+ * Fix routes-manifest.json - Add missing properties
+ * This fixes the "routesManifest.X is not iterable" errors
+ */
 
 const fs = require('fs');
 const path = require('path');
 
 const manifestPath = path.join(__dirname, 'apps/web/.next/routes-manifest.json');
 
-console.log('Checking routes-manifest.json...');
+console.log('🔧 Fixing routes-manifest.json...');
 
 if (!fs.existsSync(manifestPath)) {
-  console.error('Error: routes-manifest.json not found at:', manifestPath);
+  console.error('❌ Error: routes-manifest.json not found at', manifestPath);
   process.exit(1);
 }
 
 try {
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  // Read the manifest
+  const manifestContent = fs.readFileSync(manifestPath, 'utf8');
+  const manifest = JSON.parse(manifestContent);
 
-  // Check if dataRoutes is missing
-  if (!manifest.dataRoutes) {
-    console.log('Adding missing dataRoutes property...');
-    manifest.dataRoutes = [];
+  let fixed = false;
 
-    // Write back the fixed manifest
+  // Add all missing properties that Next.js expects
+  const requiredProperties = {
+    dataRoutes: [],
+    dynamicRoutes: [],
+    staticRoutes: []
+  };
+
+  for (const [prop, defaultValue] of Object.entries(requiredProperties)) {
+    if (!manifest[prop]) {
+      console.log(`  ➕ Adding missing ${prop} property...`);
+      manifest[prop] = defaultValue;
+      fixed = true;
+    }
+  }
+
+  if (fixed) {
+    // Write back
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-    console.log('✓ Fixed routes-manifest.json');
+    console.log('✅ Fixed routes-manifest.json');
   } else {
-    console.log('✓ routes-manifest.json already has dataRoutes');
+    console.log('✅ routes-manifest.json already valid');
   }
 
   // Verify the fix
   const verified = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  console.log('Verified dataRoutes exists:', Array.isArray(verified.dataRoutes));
+  const allValid = Object.keys(requiredProperties).every(prop => 
+    Array.isArray(verified[prop])
+  );
+
+  if (allValid) {
+    console.log('✅ Verification passed - all required properties present');
+  } else {
+    console.error('❌ Verification failed');
+    process.exit(1);
+  }
 
 } catch (error) {
-  console.error('Error processing routes-manifest.json:', error.message);
+  console.error('❌ Error fixing manifest:', error.message);
   process.exit(1);
 }
