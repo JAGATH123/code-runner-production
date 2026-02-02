@@ -1,5 +1,5 @@
-// Simple in-memory cache implementation
-// For production, replace with Redis when available
+// Simple in-memory cache implementation for frontend
+// Redis is used only on the VPS backend (API + Runner)
 
 interface CacheItem {
   value: any;
@@ -8,13 +8,15 @@ interface CacheItem {
 
 class MemoryCache {
   private cache: Map<string, CacheItem> = new Map();
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    // Clean up expired items every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000);
+    // Only start cleanup interval on server side
+    if (typeof window === 'undefined') {
+      this.cleanupInterval = setInterval(() => {
+        this.cleanup();
+      }, 5 * 60 * 1000); // Clean up every 5 minutes
+    }
   }
 
   async get<T>(key: string): Promise<T | null> {
@@ -63,11 +65,11 @@ class MemoryCache {
     }
   }
 
-  // Get cache statistics
   getStats() {
     return {
       size: this.cache.size,
-      type: 'memory'
+      type: 'memory',
+      usingRedis: false
     };
   }
 
@@ -79,160 +81,8 @@ class MemoryCache {
   }
 }
 
-// Redis cache implementation (when Redis is available)
-class RedisCache {
-  private client: any = null;
-  private connected = false;
-
-  async connect(): Promise<void> {
-    if (this.connected) return;
-
-    try {
-      // Try to import Redis client - this will fail if redis is not installed
-      const redis = await import('redis');
-      const { createClient } = redis;
-
-      this.client = createClient({
-        url: process.env.REDIS_URL || 'redis://localhost:6379',
-        socket: {
-          connectTimeout: 5000,
-          lazyConnect: true,
-        },
-        database: 0,
-      });
-
-      this.client.on('error', (err: any) => {
-        console.error('Redis Client Error:', err);
-        this.connected = false;
-      });
-
-      this.client.on('connect', () => {
-        console.log('Connected to Redis');
-        this.connected = true;
-      });
-
-      await this.client.connect();
-      this.connected = true;
-    } catch (error) {
-      console.log('Redis not available, falling back to memory cache');
-      this.connected = false;
-    }
-  }
-
-  async get<T>(key: string): Promise<T | null> {
-    if (!this.connected || !this.client) return null;
-
-    try {
-      const value = await this.client.get(key);
-      return value ? JSON.parse(value) : null;
-    } catch (error) {
-      console.error('Cache get error:', error);
-      return null;
-    }
-  }
-
-  async set(key: string, value: any, expireSeconds = 3600): Promise<void> {
-    if (!this.connected || !this.client) return;
-
-    try {
-      await this.client.setEx(key, expireSeconds, JSON.stringify(value));
-    } catch (error) {
-      console.error('Cache set error:', error);
-    }
-  }
-
-  async del(key: string): Promise<void> {
-    if (!this.connected || !this.client) return;
-
-    try {
-      await this.client.del(key);
-    } catch (error) {
-      console.error('Cache delete error:', error);
-    }
-  }
-
-  async invalidatePattern(pattern: string): Promise<void> {
-    if (!this.connected || !this.client) return;
-
-    try {
-      const keys = await this.client.keys(pattern);
-      if (keys.length > 0) {
-        await this.client.del(keys);
-      }
-    } catch (error) {
-      console.error('Cache invalidation error:', error);
-    }
-  }
-
-  getStats() {
-    return {
-      connected: this.connected,
-      type: 'redis'
-    };
-  }
-}
-
-// Cache manager that tries Redis first, falls back to memory
-class CacheManager {
-  private redisCache: RedisCache;
-  private memoryCache: MemoryCache;
-  private usingRedis = false;
-
-  constructor() {
-    this.redisCache = new RedisCache();
-    this.memoryCache = new MemoryCache();
-    this.initialize();
-  }
-
-  private async initialize() {
-    // Skip Redis if REDIS_URL is not set
-    if (!process.env.REDIS_URL) {
-      this.usingRedis = false;
-      console.log('Using memory cache (Redis not configured)');
-      return;
-    }
-
-    try {
-      await this.redisCache.connect();
-      this.usingRedis = true;
-      console.log('Using Redis for caching');
-    } catch (error) {
-      this.usingRedis = false;
-      console.log('Using memory cache (Redis not available)');
-    }
-  }
-
-  private getCache() {
-    return this.usingRedis ? this.redisCache : this.memoryCache;
-  }
-
-  async get<T>(key: string): Promise<T | null> {
-    return await this.getCache().get<T>(key);
-  }
-
-  async set(key: string, value: any, expireSeconds = 3600): Promise<void> {
-    await this.getCache().set(key, value, expireSeconds);
-  }
-
-  async del(key: string): Promise<void> {
-    await this.getCache().del(key);
-  }
-
-  async invalidatePattern(pattern: string): Promise<void> {
-    await this.getCache().invalidatePattern(pattern);
-  }
-
-  getStats() {
-    const baseStats = this.getCache().getStats();
-    return {
-      ...baseStats,
-      usingRedis: this.usingRedis
-    };
-  }
-}
-
 // Export singleton instance
-export const cache = new CacheManager();
+export const cache = new MemoryCache();
 
 // Helper function for cache keys
 export function createCacheKey(...parts: (string | number)[]): string {
