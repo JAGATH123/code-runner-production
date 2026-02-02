@@ -1,8 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[build.nixpacksConfigPath]
-path = "nixpacks.toml"
-
-[deploy]
-startCommand = "node start-with-fix.js"
