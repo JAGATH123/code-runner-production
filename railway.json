@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd apps/web && rm -rf node_modules && npm install && npm run build"
+    "buildCommand": "npm run build:web && node fix-routes.js"
   },
   "deploy": {
-    "startCommand": "cd apps/web && npm run start:prod",
+    "startCommand": "node start-with-fix.js",
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
