@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
-  output: 'standalone', // Required for Railway deployment
+  // output: 'standalone', // Causes issues in monorepo - using standard build
   devIndicators: {
     buildActivity: false,
     buildActivityPosition: 'bottom-right'
