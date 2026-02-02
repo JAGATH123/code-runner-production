@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
-  // output: 'standalone', // Disabled - causing issues with Railway monorepo
-  devIndicators: false,
+  output: 'standalone', // Required for Railway deployment
+  devIndicators: {
+    buildActivity: false,
+    buildActivityPosition: 'bottom-right'
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
