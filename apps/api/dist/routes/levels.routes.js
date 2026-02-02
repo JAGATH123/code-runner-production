@@ -4,6 +4,7 @@ const express_1 = require("express");
 const shared_1 = require("@code-runner/shared");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const rateLimit_middleware_1 = require("../middleware/rateLimit.middleware");
+const unescape_1 = require("../utils/unescape");
 const router = (0, express_1.Router)();
 router.use(rateLimit_middleware_1.apiLimiter);
 /**
@@ -20,30 +21,58 @@ router.get('/:age_group', auth_middleware_1.optionalAuthMiddleware, async (req, 
             });
         }
         // Since we don't have a Level model in shared (problems are stored with level info),
-        // we need to aggregate levels from problems
-        const levels = await shared_1.Models.Problem.aggregate([
-            { $match: { age_group } },
-            {
-                $group: {
-                    _id: '$level_number',
-                    level_number: { $first: '$level_number' },
-                    age_group: { $first: '$age_group' },
-                    problems: { $push: '$$ROOT' },
-                },
-            },
-            { $sort: { level_number: 1 } },
-        ]);
+        // Fetch all problems and group manually (Mongoose aggregation has limits)
+        const allProblems = await shared_1.Models.Problem.find({ age_group }).lean();
+        console.log(`[DEBUG] Found ${allProblems.length} total problems for age group ${age_group}`);
+        // Group by level_number manually
+        const levelMap = new Map();
+        allProblems.forEach((problem) => {
+            if (!levelMap.has(problem.level_number)) {
+                levelMap.set(problem.level_number, {
+                    _id: problem.level_number,
+                    level_number: problem.level_number,
+                    age_group: problem.age_group,
+                    problems: [],
+                });
+            }
+            levelMap.get(problem.level_number).problems.push(problem);
+        });
+        const levels = Array.from(levelMap.values()).sort((a, b) => a.level_number - b.level_number);
         // Transform the aggregated data to match the Level interface
         const formattedLevels = levels.map((level) => {
+            // Debug: Check how many problems we have
+            if (level.level_number === 1) {
+                console.log(`[DEBUG] Level 1 aggregation returned ${level.problems.length} problems`);
+                const uniqueSessions = [...new Set(level.problems.map((p) => p.session_id))];
+                console.log(`[DEBUG] Unique session IDs in problems:`, uniqueSessions.sort((a, b) => a - b));
+            }
+            // Hardcoded session titles from database (Mongoose aggregation doesn't include session_title field)
+            const sessionTitlesFromDB = {
+                '11-14': {
+                    1: 'Session 1: Understanding Output & Displaying Messages in Python',
+                    2: 'Session 2: Understanding Variables, Data Types',
+                    3: 'Session 3: Input Function and Type Conversions',
+                    4: 'Session 4: Understanding Operators in Python',
+                    5: 'Session 5: Understanding if, if-else Statements and Comparison Operators',
+                    6: 'Session 6: Nested Conditional Statements',
+                    7: 'Session 7: Introduction to Lists',
+                    8: 'Session 8: Advanced List Operations',
+                    9: 'Session 9: For Loops and Iteration',
+                    10: 'Session 10: Working with Range',
+                }
+            };
             // Group problems into sessions
             const sessionMap = new Map();
             level.problems.forEach((problem) => {
                 if (!sessionMap.has(problem.session_id)) {
+                    // Try to get title from database mapping first
+                    const dbTitle = sessionTitlesFromDB[level.age_group]?.[problem.session_id];
+                    const fallbackTitle = problem.session_title || `Session ${sessionMap.size + 1}`;
                     sessionMap.set(problem.session_id, {
                         session_id: problem.session_id,
                         level_id: level.level_number,
                         session_number: sessionMap.size + 1,
-                        title: problem.session_title || `Session ${sessionMap.size + 1}`,
+                        title: dbTitle || fallbackTitle,
                         description: problem.session_introduction || '',
                         introduction_content: problem.session_introduction || '',
                         problems: [],
@@ -52,11 +81,31 @@ router.get('/:age_group', auth_middleware_1.optionalAuthMiddleware, async (req, 
                 sessionMap.get(problem.session_id).problems.push(problem);
             });
             const sessions = Array.from(sessionMap.values());
-            // Generate meaningful session titles ONLY when missing or generic (e.g., "Session 1", "Session 2")
-            // Don't overwrite existing descriptive titles like "Session 7: User-Defined Functions"
+            // Debug: Log session IDs before filtering
+            if (level.level_number === 1) {
+                console.log(`[DEBUG] Level 1 has ${sessions.length} sessions:`, sessions.map(s => s.session_id));
+            }
+            // Sort sessions by session_id to ensure correct order
+            sessions.sort((a, b) => a.session_id - b.session_id);
+            // Update session numbers to match sorted order (1, 2, 3, 4...)
             sessions.forEach((session, index) => {
+                session.session_number = index + 1;
+                // Sort problems within each session by case_number (or problem_id if case_number is same)
+                session.problems.sort((a, b) => {
+                    if (a.case_number !== b.case_number) {
+                        return a.case_number - b.case_number;
+                    }
+                    return a.problem_id - b.problem_id;
+                });
+            });
+            // Generate meaningful session titles ONLY when missing or generic (e.g., "Session 1", "Session 2")
+            // Don't overwrite existing descriptive titles from the database
+            sessions.forEach((session, index) => {
+                // Check if title is missing or purely generic (just "Session 1" with nothing after)
                 const isGenericTitle = !session.title || /^Session \d+$/.test(session.title);
-                if (isGenericTitle) {
+                // If title already has descriptive content (like "Session 1: Something"), keep it
+                const hasDescriptiveContent = session.title && session.title.includes(':') && session.title.split(':')[1].trim().length > 0;
+                if (isGenericTitle && !hasDescriptiveContent) {
                     // Analyze problem titles to generate a meaningful session title
                     const problemTitles = session.problems.map((p) => p.title?.toLowerCase() || '');
                     const sessionText = problemTitles.join(' ');
@@ -106,19 +155,35 @@ router.get('/:age_group', auth_middleware_1.optionalAuthMiddleware, async (req, 
                     }
                 }
             });
-            // Generate description from session count and difficulty
-            const difficulties = new Set(level.problems.map((p) => p.difficulty));
-            const difficultyText = Array.from(difficulties).join(', ');
+            // Generate descriptive level title based on content
+            const levelTitles = {
+                '11-14': {
+                    1: 'Mission 1: Python Fundamentals',
+                    2: 'Mission 2: Data Structures & Functions',
+                    3: 'Mission 3: Object-Oriented Programming',
+                    4: 'Mission 4: Error Handling & File Operations',
+                },
+                '15-18': {
+                    1: 'Mission 1: Advanced Python Concepts',
+                    2: 'Mission 2: Data Structures & Algorithms',
+                    3: 'Mission 3: Advanced OOP & Design Patterns',
+                    4: 'Mission 4: System Programming & Optimization',
+                }
+            };
+            const levelTitle = levelTitles[level.age_group]?.[level.level_number] ||
+                `Mission ${level.level_number}: Code Convergence`;
             return {
                 level_id: level.level_number,
                 level_number: level.level_number,
-                title: `Mission ${level.level_number}: Code Convergence`,
+                title: levelTitle,
                 age_group: level.age_group,
                 description: `Complete ${level.problems.length} challenges across ${sessions.length} sessions`,
                 sessions,
             };
         });
-        res.json(formattedLevels);
+        // Unescape special characters in all problem data
+        const unescapedLevels = (0, unescape_1.unescapeObject)(formattedLevels);
+        res.json(unescapedLevels);
     }
     catch (error) {
         console.error('Error fetching levels:', error);

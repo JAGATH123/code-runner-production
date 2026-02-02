@@ -8,79 +8,79 @@
   "app\\home\\page.tsx -> three": {
     "id": "app\\home\\page.tsx -> three",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_build_three_module_js.js"
     ]
   },
   "app\\home\\page.tsx -> three/examples/jsm/controls/OrbitControls.js": {
     "id": "app\\home\\page.tsx -> three/examples/jsm/controls/OrbitControls.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_controls_OrbitControls_js.js"
     ]
   },
   "app\\levels\\[age_group]\\[level_number]\\page.tsx -> three": {
     "id": "app\\levels\\[age_group]\\[level_number]\\page.tsx -> three",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_build_three_module_js.js"
     ]
   },
   "app\\levels\\[age_group]\\[level_number]\\page.tsx -> three/examples/jsm/controls/OrbitControls.js": {
     "id": "app\\levels\\[age_group]\\[level_number]\\page.tsx -> three/examples/jsm/controls/OrbitControls.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_controls_OrbitControls_js.js"
     ]
   },
   "app\\levels\\[age_group]\\page.tsx -> three": {
     "id": "app\\levels\\[age_group]\\page.tsx -> three",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_build_three_module_js.js"
     ]
   },
   "app\\levels\\[age_group]\\page.tsx -> three/examples/jsm/controls/OrbitControls.js": {
     "id": "app\\levels\\[age_group]\\page.tsx -> three/examples/jsm/controls/OrbitControls.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_controls_OrbitControls_js.js"
     ]
   },
   "components\\layout\\MemoryLoadingScreen.tsx -> three": {
     "id": "components\\layout\\MemoryLoadingScreen.tsx -> three",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_build_three_module_js.js"
     ]
   },
   "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/EffectComposer.js": {
     "id": "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/EffectComposer.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_postprocessing_EffectComposer_js.js"
     ]
   },
   "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/GlitchPass.js": {
     "id": "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/GlitchPass.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_postprocessing_GlitchPass_js.js"
     ]
   },
   "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/RenderPass.js": {
     "id": "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/RenderPass.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_postprocessing_RenderPass_js.js"
     ]
   },
   "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/ShaderPass.js": {
     "id": "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/ShaderPass.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_postprocessing_ShaderPass_js.js"
     ]
   },
   "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/UnrealBloomPass.js": {
     "id": "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/postprocessing/UnrealBloomPass.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_postprocessing_UnrealBloomPass_js.js"
     ]
   },
   "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/shaders/CopyShader.js": {
     "id": "components\\layout\\MemoryLoadingScreen.tsx -> three/examples/jsm/shaders/CopyShader.js",
     "files": [
-      "static/chunks/threejs.js"
+      "static/chunks/_app-pages-browser_node_modules_three_examples_jsm_shaders_CopyShader_js.js"
     ]
   }
 }

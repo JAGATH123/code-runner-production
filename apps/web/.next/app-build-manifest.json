@@ -35,6 +35,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/levels/[age_group]/[level_number]/page.js"
+    ],
+    "/problems/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/problems/[id]/page.js"
     ]
   }
 }

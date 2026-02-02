@@ -14,4 +14,4 @@ cmds = [
 ]
 
 [start]
-cmd = "cd ../.. && npm run start:web"
+cmd = "cd ../.. && node start-with-fix.js"

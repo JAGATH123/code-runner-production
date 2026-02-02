@@ -1,9 +1,10 @@
 {
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
   "/boot/page": "app/boot/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
   "/home/page": "app/home/page.js",
   "/levels/[age_group]/page": "app/levels/[age_group]/page.js",
-  "/levels/[age_group]/[level_number]/page": "app/levels/[age_group]/[level_number]/page.js"
+  "/levels/[age_group]/[level_number]/page": "app/levels/[age_group]/[level_number]/page.js",
+  "/problems/[id]/page": "app/problems/[id]/page.js"
 }

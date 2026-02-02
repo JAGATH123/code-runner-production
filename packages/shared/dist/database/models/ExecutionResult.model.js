@@ -40,12 +40,10 @@ const ExecutionResultSchema = new mongoose_1.Schema({
         type: String,
         required: true,
         unique: true,
-        index: true,
     },
     userId: {
         type: String,
         required: true,
-        index: true,
     },
     problemId: Number,
     code: {
@@ -56,7 +54,6 @@ const ExecutionResultSchema = new mongoose_1.Schema({
         type: String,
         enum: ['pending', 'processing', 'completed', 'failed'],
         default: 'pending',
-        index: true,
     },
     result: mongoose_1.Schema.Types.Mixed,
     submissionResult: mongoose_1.Schema.Types.Mixed,
@@ -71,8 +68,7 @@ const ExecutionResultSchema = new mongoose_1.Schema({
     collection: 'execution_results',
 });
 // Indexes
-ExecutionResultSchema.index({ jobId: 1 }, { unique: true });
+// Note: jobId unique index and createdAt TTL index are automatically created by schema field definitions
 ExecutionResultSchema.index({ userId: 1, createdAt: -1 });
-ExecutionResultSchema.index({ createdAt: 1 }, { expireAfterSeconds: 604800 }); // TTL index
 exports.ExecutionResult = mongoose_1.default.models.ExecutionResult || mongoose_1.default.model('ExecutionResult', ExecutionResultSchema);
 //# sourceMappingURL=ExecutionResult.model.js.map

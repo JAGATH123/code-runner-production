@@ -99,7 +99,7 @@ const ProblemSchema = new mongoose_1.Schema({
     collection: 'problems',
 });
 // Indexes
-ProblemSchema.index({ problem_id: 1 }, { unique: true });
+// Note: problem_id unique index is automatically created by 'unique: true' in schema
 ProblemSchema.index({ session_id: 1 });
 ProblemSchema.index({ age_group: 1, level_number: 1 });
 ProblemSchema.index({ age_group: 1, level_number: 1, session_id: 1 });

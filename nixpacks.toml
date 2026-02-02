@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = [
+  "npm install"
+]
+
+[phases.build]
+cmds = [
+  "cd apps/web && rm -rf .next",
+  "npm run build:web",
+  "node fix-routes.js"
+]
+
+[start]
+cmd = "node start-with-fix.js"

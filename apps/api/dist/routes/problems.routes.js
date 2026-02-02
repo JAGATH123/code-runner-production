@@ -4,6 +4,7 @@ const express_1 = require("express");
 const shared_1 = require("@code-runner/shared");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const rateLimit_middleware_1 = require("../middleware/rateLimit.middleware");
+const unescape_1 = require("../utils/unescape");
 const router = (0, express_1.Router)();
 // Apply rate limiting to all routes
 router.use(rateLimit_middleware_1.apiLimiter);
@@ -31,11 +32,15 @@ router.get('/:id', auth_middleware_1.optionalAuthMiddleware, async (req, res) =>
         if (isNaN(problemId)) {
             return res.status(400).json({ error: 'Invalid problem ID' });
         }
-        const problem = await shared_1.Models.Problem.findOne({ problem_id: problemId });
+        console.log(`[DEBUG] Looking for problem_id: ${problemId}`);
+        const problem = await shared_1.Models.Problem.findOne({ problem_id: problemId }).lean();
+        console.log(`[DEBUG] Found problem:`, problem ? `ID ${problem.problem_id} - ${problem.title}` : 'NULL');
         if (!problem) {
             return res.status(404).json({ error: 'Problem not found' });
         }
-        res.json(problem);
+        // Unescape special characters (convert \n to actual newlines, etc.)
+        const unescapedProblem = (0, unescape_1.unescapeObject)(problem);
+        res.json(unescapedProblem);
     }
     catch (error) {
         console.error('Error fetching problem:', error);
@@ -56,8 +61,10 @@ router.get('/:id/test-cases', auth_middleware_1.optionalAuthMiddleware, async (r
         const testCases = await shared_1.Models.TestCase.find({
             problem_id: problemId,
             is_hidden: false,
-        }).sort({ test_case_id: 1 });
-        res.json(testCases);
+        }).sort({ test_case_id: 1 }).lean();
+        // Unescape special characters in test cases
+        const unescapedTestCases = (0, unescape_1.unescapeObject)(testCases);
+        res.json(unescapedTestCases);
     }
     catch (error) {
         console.error('Error fetching test cases:', error);
@@ -78,8 +85,10 @@ router.get('/:id/test-cases/all', async (req, res) => {
         // Get all test cases including hidden ones
         const testCases = await shared_1.Models.TestCase.find({
             problem_id: problemId,
-        }).sort({ test_case_id: 1 });
-        res.json(testCases);
+        }).sort({ test_case_id: 1 }).lean();
+        // Unescape special characters in test cases (important for runner)
+        const unescapedTestCases = (0, unescape_1.unescapeObject)(testCases);
+        res.json(unescapedTestCases);
     }
     catch (error) {
         console.error('Error fetching test cases:', error);

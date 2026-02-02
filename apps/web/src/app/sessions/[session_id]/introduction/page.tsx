@@ -6,9 +6,10 @@ import { notFound } from 'next/navigation';
 import { useGlobalAudio } from '@/contexts/AudioContext';
 import { useEffect, useState } from 'react';
 import MemoryLoadingScreen from '@/components/layout/MemoryLoadingScreen';
-import { Activity, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Zap, BookOpen, Target, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface IntroductionPageProps {
   params: {
@@ -16,9 +17,21 @@ interface IntroductionPageProps {
   };
 }
 
+// Flowchart data structure for each session
+const sessionFlowcharts: Record<string, { images: string[]; title: string; description: string }> = {
+  '1': {
+    images: ['/assets/flowcharts/11-14/level-1/sessions/session-1/flow 1.png'],
+    title: 'Variables in Output',
+    description: 'Learn how to use the print() function to display text and values. Understanding how input transforms into output is the foundation of programming.'
+  },
+  // Add more sessions as needed
+};
+
 export default function IntroductionPage({ params }: IntroductionPageProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { forcePlayBackgroundMusic } = useGlobalAudio();
 
   useEffect(() => {
@@ -52,7 +65,7 @@ export default function IntroductionPage({ params }: IntroductionPageProps) {
     return (
       <MemoryLoadingScreen
         isVisible={loading}
-        text="// Loading introduction..."
+        text="// Initializing training module..."
         duration={2000}
       />
     );
@@ -62,153 +75,263 @@ export default function IntroductionPage({ params }: IntroductionPageProps) {
     notFound();
   }
 
-  // Default placeholder content if session doesn't have introduction_content
-  const defaultPlaceholders = [
-    { imageName: 'placeholder1.png', description: 'Concept 1 explanation', taskName: 'Concept 1' },
-    { imageName: 'placeholder2.png', description: 'Concept 2 explanation', taskName: 'Concept 2' },
-    { imageName: 'placeholder3.png', description: 'Concept 3 explanation', taskName: 'Concept 3' },
-    { imageName: 'placeholder4.png', description: 'Concept 4 explanation', taskName: 'Concept 4' },
-    { imageName: 'placeholder5.png', description: 'Concept 5 explanation', taskName: 'Concept 5' }
-  ];
+  const flowchartData = sessionFlowcharts[session.session_id] || {
+    images: [],
+    title: session.title,
+    description: 'Explore the concepts in this training module.'
+  };
+
+  const currentImage = flowchartData.images[currentImageIndex];
+  const hasMultipleImages = flowchartData.images.length > 1;
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % flowchartData.images.length);
+    setImageLoaded(false);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + flowchartData.images.length) % flowchartData.images.length);
+    setImageLoaded(false);
+  };
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground relative overflow-hidden">
-      {/* Background Grid */}
-      <div className="fixed inset-0 opacity-10 z-0">
+    <div className="flex flex-col min-h-screen bg-background text-foreground relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0">
+        {/* Grid Pattern */}
         <div className="absolute inset-0" style={{
           backgroundImage: `
-            linear-gradient(rgba(0,191,255,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,191,255,0.1) 1px, transparent 1px)
+            linear-gradient(rgba(0,191,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,191,255,0.03) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px'
+          backgroundSize: '60px 60px'
         }}></div>
+
+        {/* Gradient Orbs */}
+        <div className="absolute top-20 left-10 w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: 'radial-gradient(circle, rgba(0,191,255,0.3) 0%, transparent 70%)' }}></div>
+        <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full opacity-15 blur-3xl"
+          style={{ background: 'radial-gradient(circle, rgba(0,150,255,0.3) 0%, transparent 70%)' }}></div>
       </div>
 
       <Header />
-      <main className="flex-grow relative z-10 overflow-auto p-6 md:p-8">
-        <div className="max-w-screen-xl mx-auto">
-          {/* Back Button */}
-          <Link href={`/levels/11-14/${session.level_id}#session-${session.session_id}`}>
-            <Button variant="ghost" className="mb-6 hover:bg-blue-500/10 font-space font-semibold uppercase tracking-wide text-sm" style={{ color: 'rgb(0, 191, 255)' }}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Sessions
-            </Button>
-          </Link>
 
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="relative">
-                <Activity className="h-7 w-7" style={{ color: 'rgb(0, 191, 255)' }} />
-                <div className="absolute -inset-1 rounded-full blur animate-pulse" style={{ backgroundColor: 'rgba(0, 191, 255, 0.2)' }}></div>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-space font-bold" style={{ color: 'rgb(0, 191, 255)' }}>ARENA: WARM-UP</h1>
+      <main className="flex-grow relative z-10 overflow-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+          {/* Top Navigation */}
+          <div className="flex items-center justify-between mb-8">
+            <Link href={`/levels/11-14/${session.level_id}#session-${session.session_id}`}>
+              <Button
+                variant="ghost"
+                className="group hover:bg-cyan-500/10 font-space font-semibold uppercase tracking-wide text-sm transition-all duration-300"
+                style={{ color: 'rgb(0, 191, 255)' }}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                Back to Sessions
+              </Button>
+            </Link>
+
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full border"
+              style={{ borderColor: 'rgba(0, 191, 255, 0.3)', backgroundColor: 'rgba(0, 191, 255, 0.05)' }}>
+              <Zap className="h-4 w-4 animate-pulse" style={{ color: 'rgb(0, 191, 255)' }} />
+              <span className="text-sm font-space font-semibold" style={{ color: 'rgb(0, 191, 255)' }}>
+                SESSION {session.session_id}
+              </span>
             </div>
-            <h2 className="text-lg font-space font-bold ml-10" style={{ color: '#000000' }}>{session.title}</h2>
           </div>
 
-          {/* Introduction Content - Grid Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {(session.introduction_content
-              ? session.introduction_content.split('\n').reduce((acc: any[], line, index) => {
-                  // Check if line contains image reference
-                  const imageMatch = line.match(/^(?:🖼️\s*)?(\d+)\.\s*(.+\.(?:png|jpg|jpeg|gif|webp))/i);
-                  if (imageMatch) {
-                    const imageName = imageMatch[2].trim();
-                    const imageNumber = imageMatch[1];
-                    // Extract task name from filename (remove extension and format)
-                    const taskName = imageName
-                      .replace(/\.(png|jpg|jpeg|gif|webp)$/i, '')
-                      .split(/[_-]/)
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ');
-                    acc.push({
-                      type: 'image',
-                      imageName,
-                      imageNumber,
-                      taskName,
-                      index,
-                      description: null
-                    });
-                  }
-                  // Check if line starts with arrow (description)
-                  else if (line.trim().startsWith('➡️')) {
-                    const description = line.replace('➡️', '').trim();
-                    if (acc.length > 0 && acc[acc.length - 1].type === 'image') {
-                      acc[acc.length - 1].description = description;
-                    }
-                  }
-                  return acc;
-                }, [])
-              : defaultPlaceholders.map((item, index) => ({
-                  type: 'image',
-                  imageName: item.imageName,
-                  imageNumber: String(index + 1),
-                  taskName: item.taskName,
-                  description: item.description,
-                  index
-                }))
-            ).map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-card rounded-lg p-5 shadow-lg border-2 hover:shadow-xl transition-shadow duration-300"
-                style={{ borderColor: 'rgba(0, 191, 255, 0.3)' }}
-              >
-                {/* Image Number Badge */}
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold font-mono" style={{ backgroundColor: 'rgba(0, 191, 255, 0.2)', color: 'rgb(0, 191, 255)' }}>
-                    {item.imageNumber}
+          {/* Main Content Area */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* Left Panel - Session Info */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Title Card */}
+              <div className="rounded-2xl p-6 border-2 relative overflow-hidden"
+                style={{
+                  borderColor: 'rgba(0, 191, 255, 0.3)',
+                  background: 'linear-gradient(135deg, rgba(0, 191, 255, 0.05) 0%, rgba(255,255,255,0.9) 100%)'
+                }}>
+                {/* Decorative corner */}
+                <div className="absolute top-0 right-0 w-20 h-20 opacity-20"
+                  style={{
+                    background: 'linear-gradient(135deg, transparent 50%, rgba(0, 191, 255, 0.3) 50%)'
+                  }}></div>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(0, 191, 255, 0.1)' }}>
+                    <BookOpen className="h-6 w-6" style={{ color: 'rgb(0, 191, 255)' }} />
                   </div>
-                  <span className="text-base font-mono uppercase tracking-wide font-semibold" style={{ color: 'rgb(0, 191, 255)' }}>{item.taskName}</span>
+                  <span className="text-xs font-mono uppercase tracking-widest" style={{ color: 'rgba(0, 191, 255, 0.8)' }}>
+                    Training Module
+                  </span>
                 </div>
 
-                {/* Image - Only show if not a placeholder */}
-                {!item.imageName.startsWith('placeholder') && (
-                  <div className="mb-4 bg-slate-900/50 rounded-lg p-3">
+                <h1 className="text-2xl md:text-3xl font-space font-bold mb-3" style={{ color: '#1a1a2e' }}>
+                  {flowchartData.title}
+                </h1>
+
+                <p className="text-sm leading-relaxed" style={{ color: '#4a4a6a' }}>
+                  {flowchartData.description}
+                </p>
+              </div>
+
+              {/* Objectives Card */}
+              <div className="rounded-2xl p-6 border"
+                style={{
+                  borderColor: 'rgba(0, 191, 255, 0.2)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Target className="h-5 w-5" style={{ color: 'rgb(0, 191, 255)' }} />
+                  <span className="text-sm font-space font-bold uppercase tracking-wide" style={{ color: 'rgb(0, 191, 255)' }}>
+                    Learning Objectives
+                  </span>
+                </div>
+
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: 'rgb(0, 191, 255)' }}></div>
+                    <span className="text-sm" style={{ color: '#4a4a6a' }}>Understand the print() function</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: 'rgb(0, 191, 255)' }}></div>
+                    <span className="text-sm" style={{ color: '#4a4a6a' }}>Learn how code produces output</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: 'rgb(0, 191, 255)' }}></div>
+                    <span className="text-sm" style={{ color: '#4a4a6a' }}>Practice writing your first Python program</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Continue Button - Desktop */}
+              <div className="hidden lg:block">
+                <Link href={`/problems/${session.problems[0]?.problem_id}`} className="block">
+                  <Button
+                    className="w-full group text-white font-space font-bold px-8 py-6 text-base rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+                    style={{
+                      backgroundColor: 'rgb(0, 191, 255)',
+                      boxShadow: '0 4px 20px rgba(0, 191, 255, 0.3)'
+                    }}
+                  >
+                    <span>Start Training</span>
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Panel - Flowchart Display */}
+            <div className="lg:col-span-2">
+              <div className="rounded-2xl overflow-hidden relative">
+                {/* Image Container */}
+                <div className="relative flex items-center justify-center">
+                  {/* Loading State */}
+                  {!imageLoaded && currentImage && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-12 h-12 border-4 rounded-full animate-spin"
+                        style={{ borderColor: 'rgba(0, 191, 255, 0.2)', borderTopColor: 'rgb(0, 191, 255)' }}></div>
+                    </div>
+                  )}
+
+                  {currentImage ? (
                     <img
-                      src={`/images/${item.imageName}`}
-                      alt={item.imageName}
-                      className="w-full h-auto max-h-64 object-contain rounded-md"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
+                      src={currentImage}
+                      alt={flowchartData.title}
+                      className={`w-full h-auto object-contain rounded-xl transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      onLoad={() => setImageLoaded(true)}
                     />
-                  </div>
-                )}
-
-                {/* Placeholder Box - Show only for placeholders */}
-                {item.imageName.startsWith('placeholder') && (
-                  <div className="mb-4 bg-slate-900/50 rounded-lg p-3 flex items-center justify-center" style={{ minHeight: '200px' }}>
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-3 rounded-lg border-2 border-dashed flex items-center justify-center" style={{ borderColor: 'rgba(0, 191, 255, 0.3)' }}>
-                        <Activity className="h-8 w-8" style={{ color: 'rgba(0, 191, 255, 0.5)' }} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-8">
+                      <div className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center mb-4"
+                        style={{ borderColor: 'rgba(0, 191, 255, 0.3)' }}>
+                        <BookOpen className="h-12 w-12" style={{ color: 'rgba(0, 191, 255, 0.5)' }} />
                       </div>
-                      <p className="text-sm font-mono" style={{ color: 'rgba(0, 191, 255, 0.6)' }}>Flowchart Coming Soon</p>
+                      <p className="text-lg font-space" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                        Concept visualization coming soon
+                      </p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Explanation Label and Description - Only show for non-placeholder descriptions */}
-                {item.description && !item.description.includes('Concept') && !item.description.includes('explanation') && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono uppercase tracking-wider font-bold" style={{ color: 'rgba(0, 191, 255, 0.8)' }}>Explanation:</span>
-                      <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(0, 191, 255, 0.2)' }}></div>
-                    </div>
-                    <p className="text-sm md:text-base text-foreground/90 leading-relaxed pl-3 border-l-2" style={{ borderColor: 'rgba(0, 191, 255, 0.4)' }}>
-                      {item.description}
-                    </p>
+                  {/* Navigation Arrows */}
+                  {hasMultipleImages && (
+                    <>
+                      <button
+                        onClick={prevImage}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full transition-all duration-300 hover:scale-110"
+                        style={{
+                          backgroundColor: 'rgba(0, 191, 255, 0.2)',
+                          border: '1px solid rgba(0, 191, 255, 0.4)'
+                        }}
+                      >
+                        <ChevronLeft className="h-6 w-6" style={{ color: 'rgb(0, 191, 255)' }} />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full transition-all duration-300 hover:scale-110"
+                        style={{
+                          backgroundColor: 'rgba(0, 191, 255, 0.2)',
+                          border: '1px solid rgba(0, 191, 255, 0.4)'
+                        }}
+                      >
+                        <ChevronRight className="h-6 w-6" style={{ color: 'rgb(0, 191, 255)' }} />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Image Indicators */}
+                {hasMultipleImages && (
+                  <div className="flex justify-center gap-2 pb-4">
+                    {flowchartData.images.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => { setCurrentImageIndex(idx); setImageLoaded(false); }}
+                        className="w-2 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          backgroundColor: idx === currentImageIndex ? 'rgb(0, 191, 255)' : 'rgba(0, 191, 255, 0.3)',
+                          transform: idx === currentImageIndex ? 'scale(1.5)' : 'scale(1)'
+                        }}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
-            ))}
+
+              {/* Tip Section */}
+              <div className="mt-6 rounded-xl p-4 border flex items-start gap-4"
+                style={{
+                  borderColor: 'rgba(0, 191, 255, 0.2)',
+                  backgroundColor: 'rgba(0, 191, 255, 0.05)'
+                }}>
+                <div className="p-2 rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgba(0, 191, 255, 0.1)' }}>
+                  <Zap className="h-5 w-5" style={{ color: 'rgb(0, 191, 255)' }} />
+                </div>
+                <div>
+                  <p className="text-sm font-space font-semibold mb-1" style={{ color: 'rgb(0, 191, 255)' }}>
+                    Pro Tip
+                  </p>
+                  <p className="text-sm" style={{ color: '#4a4a6a' }}>
+                    Study the flowchart carefully before starting the tasks. Understanding the concept visually will help you write better code!
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Navigation to Tasks */}
-          <div className="mt-10 text-center pb-8">
-            <Link href={`/problems/${session.problems[0]?.problem_id}`}>
-              <Button className="text-white font-space font-semibold px-10 py-3 text-base hover:opacity-80 transition-opacity" style={{ backgroundColor: 'rgb(0, 191, 255)' }}>
-                Continue to Task 1
+          {/* Continue Button - Mobile */}
+          <div className="lg:hidden mt-8 pb-8">
+            <Link href={`/problems/${session.problems[0]?.problem_id}`} className="block">
+              <Button
+                className="w-full group text-white font-space font-bold px-8 py-6 text-base rounded-xl transition-all duration-300"
+                style={{
+                  backgroundColor: 'rgb(0, 191, 255)',
+                  boxShadow: '0 4px 20px rgba(0, 191, 255, 0.3)'
+                }}
+              >
+                <span>Start Training</span>
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>

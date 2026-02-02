@@ -11,7 +11,7 @@
     "build:web": "npm run build --workspace=@code-runner/web",
     "build:runner": "npm run build --workspace=@code-runner/runner",
     "start:api": "npm run start --workspace=@code-runner/api",
-    "start:web": "npm run start --workspace=@code-runner/web",
+    "start:web": "npm run start:prod --workspace=@code-runner/web",
     "start:runner": "npm run start --workspace=@code-runner/runner"
   },
   "engines": {

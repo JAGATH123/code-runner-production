@@ -18,4 +18,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./jwt.utils"), exports);
 __exportStar(require("./password.utils"), exports);
 __exportStar(require("./validation.utils"), exports);
+__exportStar(require("./logger.utils"), exports);
 //# sourceMappingURL=index.js.map
