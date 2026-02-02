@@ -5,7 +5,7 @@
     "buildCommand": "npm install && npm run build:web"
   },
   "deploy": {
-    "startCommand": "cd apps/web && node .next/standalone/apps/web/server.js",
+    "startCommand": "cd apps/web && HOSTNAME=0.0.0.0 PORT=${PORT:-8080} node .next/standalone/apps/web/server.js",
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
