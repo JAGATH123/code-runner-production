@@ -12,6 +12,8 @@ import { useAnimations } from '@/hooks/useAnimations';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api-client';
 
+const CDN_SETTLEMENT_BG = 'https://res.cloudinary.com/dwqzqxeuk/image/upload/f_auto,q_auto/code-runner/ui/technological-exploration-settlement.jpg';
+
 interface LevelDetailPageProps {
     params: {
         age_group: string;
@@ -118,138 +120,22 @@ export default function LevelDetailPage({ params }: LevelDetailPageProps) {
         }
     }, [levelData, forcePlayBackgroundMusic, forcePlayMissionMusic, getCurrentMusicType]);
 
-    // Initialize animations and background when loaded
+    // Initialize animations and background when loaded - No Three.js
     useEffect(() => {
         if (isLoaded && !loading) {
-            let cleanup: (() => void) | undefined;
-
-            const timer = setTimeout(async () => {
+            const timer = setTimeout(() => {
                 animateHeroEntrance();
                 animateCardsEntrance();
                 addGlitchEffect();
-                cleanup = await initializeBackgroundEffects();
+                // Initialize CSS-only floating particles
+                initFloatingParticles();
             }, 500);
 
             return () => {
                 clearTimeout(timer);
-                if (cleanup) cleanup();
             };
         }
     }, [isLoaded, loading]);
-
-    // Initialize Three.js background effects
-    const initializeBackgroundEffects = async () => {
-        try {
-            const THREE = await import('three');
-            const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
-
-            initFloatingParticles();
-
-            const container = document.getElementById('three-container');
-            if (!container) return;
-
-            container.innerHTML = '';
-
-            const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x0a0e17, 0.05);
-
-            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 10;
-
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x000000, 0);
-            container.appendChild(renderer.domElement);
-
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.1;
-            controls.enableZoom = false;
-
-            const anomalyObject = new THREE.Group();
-            const radius = 2;
-            const geometry = new THREE.IcosahedronGeometry(radius, 2);
-
-            const material = new THREE.ShaderMaterial({
-                uniforms: {
-                    time: { value: 0 },
-                    color: { value: new THREE.Color(0x00ffff) }
-                },
-                vertexShader: `
-                    uniform float time;
-                    varying vec3 vNormal;
-                    void main() {
-                        vNormal = normalize(normalMatrix * normal);
-                        vec3 pos = position;
-                        float noise = sin(position.x * 2.0 + time) * 0.1;
-                        pos += normal * noise;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform float time;
-                    uniform vec3 color;
-                    varying vec3 vNormal;
-                    void main() {
-                        float fresnel = 1.0 - max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
-                        float pulse = 0.8 + 0.2 * sin(time * 2.0);
-                        vec3 finalColor = color * fresnel * pulse;
-                        gl_FragColor = vec4(finalColor, fresnel * 0.7);
-                    }
-                `,
-                wireframe: true,
-                transparent: true
-            });
-
-            const mesh = new THREE.Mesh(geometry, material);
-            anomalyObject.add(mesh);
-            scene.add(anomalyObject);
-
-            const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
-            scene.add(ambientLight);
-
-            const pointLight1 = new THREE.PointLight(0x00ffff, 1, 10);
-            pointLight1.position.set(2, 2, 2);
-            scene.add(pointLight1);
-
-            const clock = new THREE.Clock();
-            let animationFrameId: number;
-            const animate = () => {
-                const time = clock.getElapsedTime();
-
-                controls.update();
-                material.uniforms.time.value = time;
-                anomalyObject.rotation.y += 0.005;
-                anomalyObject.rotation.z += 0.002;
-
-                renderer.render(scene, camera);
-                animationFrameId = requestAnimationFrame(animate);
-            };
-            animate();
-
-            const handleResize = () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            };
-            window.addEventListener('resize', handleResize);
-
-            return () => {
-                cancelAnimationFrame(animationFrameId);
-                window.removeEventListener('resize', handleResize);
-                renderer.dispose();
-                geometry.dispose();
-                material.dispose();
-                if (container && renderer.domElement) {
-                    container.removeChild(renderer.domElement);
-                }
-            };
-
-        } catch (error) {
-            console.error('Error initializing background effects:', error);
-            return undefined;
-        }
-    };
 
     // Initialize floating particles
     const initFloatingParticles = () => {
@@ -334,7 +220,7 @@ export default function LevelDetailPage({ params }: LevelDetailPageProps) {
             <div
                 className="fixed inset-0 z-0"
                 style={{
-                    backgroundImage: 'url("/assets/ui/technological-exploration-settlement.jpg")',
+                    backgroundImage: `url("${CDN_SETTLEMENT_BG}")`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat'
@@ -355,11 +241,8 @@ export default function LevelDetailPage({ params }: LevelDetailPageProps) {
                 }}
             ></div>
 
-            {/* Three.js Container */}
-            <div id="three-container" className="fixed inset-0" style={{ zIndex: 2 }}></div>
-
-            {/* Floating Particles Container */}
-            <div id="floating-particles" className="fixed inset-0 pointer-events-none" style={{ zIndex: 3 }}></div>
+            {/* Floating Particles Container - CSS animations only */}
+            <div id="floating-particles" className="fixed inset-0 pointer-events-none" style={{ zIndex: 2 }}></div>
 
             <Header />
             

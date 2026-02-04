@@ -5,7 +5,6 @@ import { CompilerUI } from '@/components/editor/CompilerUI';
 import type { Problem } from '@/lib/types';
 import { useGlobalAudio } from '@/contexts/AudioContext';
 import { useEffect, useState } from 'react';
-import MemoryLoadingScreen from '@/components/layout/MemoryLoadingScreen';
 import { notFound } from 'next/navigation';
 import { api } from '@/lib/api-client';
 
@@ -86,11 +85,18 @@ export default function UltimateChallengePage({ params }: UltimateChallengePageP
 
   if (loading || !resolvedParams) {
     return (
-      <MemoryLoadingScreen
-        isVisible={true}
-        text={resolvedParams ? (levelLoadingText[resolvedParams.level_number] || '// Loading challenge...') : '// Loading challenge...'}
-        duration={2000}
-      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div className="text-center">
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <div className="absolute inset-0 border-2 border-purple-500/30 rounded-full"></div>
+            <div className="absolute inset-0 border-2 border-transparent border-t-purple-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-2 border-2 border-transparent border-t-purple-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+          </div>
+          <p className="font-mono text-purple-400 text-sm animate-pulse">
+            {resolvedParams ? (levelLoadingText[resolvedParams.level_number] || '// Loading challenge...') : '// Loading challenge...'}
+          </p>
+        </div>
+      </div>
     );
   }
 

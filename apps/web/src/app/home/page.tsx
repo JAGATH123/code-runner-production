@@ -2,14 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { ArrowRight, Zap, Rocket, Code2, Star } from 'lucide-react';
 import { useGlobalAudio } from '@/contexts/AudioContext';
 import { useAnimations } from '@/hooks/useAnimations';
 import { usePageAudio } from '@/hooks/usePageAudio';
-import { useEffect, useRef, useState } from 'react';
-import MemoryLoadingScreen from '@/components/layout/MemoryLoadingScreen';
+import { useEffect, useState } from 'react';
 
 function AgeSelectionPageContent() {
   const router = useRouter();
@@ -44,145 +42,20 @@ function AgeSelectionPageContent() {
   // Initialize animations and background when loaded
   useEffect(() => {
     if (isLoaded) {
-      let cleanup: (() => void) | undefined;
-
-      const timer = setTimeout(async () => {
+      const timer = setTimeout(() => {
         // Start entrance animations
         animateHeroEntrance();
         animateCardsEntrance();
         addGlitchEffect();
-        cleanup = await initializeBackgroundEffects();
+        // Initialize lightweight floating particles
+        initFloatingParticles();
       }, 500);
 
       return () => {
         clearTimeout(timer);
-        if (cleanup) cleanup();
       };
     }
   }, [isLoaded]);
-
-  // Initialize Three.js background effects
-  const initializeBackgroundEffects = async () => {
-    try {
-      // Dynamically import Three.js
-      const THREE = await import('three');
-      const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
-
-      // Initialize floating particles
-      initFloatingParticles();
-
-      // Initialize Three.js scene
-      const container = document.getElementById('three-container');
-      if (!container) return;
-
-      // Clear any existing canvas
-      container.innerHTML = '';
-
-      const scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x0a0e17, 0.05);
-
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 10;
-
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setClearColor(0x000000, 0);
-      container.appendChild(renderer.domElement);
-
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.1;
-      controls.enableZoom = false;
-
-      // Create animated anomaly object
-      const anomalyObject = new THREE.Group();
-      const radius = 2;
-      const geometry = new THREE.IcosahedronGeometry(radius, 2);
-
-      const material = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          color: { value: new THREE.Color(0xff4e42) }
-        },
-        vertexShader: `
-          uniform float time;
-          varying vec3 vNormal;
-          void main() {
-            vNormal = normalize(normalMatrix * normal);
-            vec3 pos = position;
-            float noise = sin(position.x * 2.0 + time) * 0.1;
-            pos += normal * noise;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float time;
-          uniform vec3 color;
-          varying vec3 vNormal;
-          void main() {
-            float fresnel = 1.0 - max(0.0, dot(vNormal, vec3(0.0, 0.0, 1.0)));
-            float pulse = 0.8 + 0.2 * sin(time * 2.0);
-            vec3 finalColor = color * fresnel * pulse;
-            gl_FragColor = vec4(finalColor, fresnel * 0.7);
-          }
-        `,
-        wireframe: true,
-        transparent: true
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
-      anomalyObject.add(mesh);
-      scene.add(anomalyObject);
-
-      // Add lights
-      const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
-      scene.add(ambientLight);
-
-      const pointLight1 = new THREE.PointLight(0xff4e42, 1, 10);
-      pointLight1.position.set(2, 2, 2);
-      scene.add(pointLight1);
-
-      // Animation loop
-      const clock = new THREE.Clock();
-      let animationFrameId: number;
-      const animate = () => {
-        const time = clock.getElapsedTime();
-
-        controls.update();
-        material.uniforms.time.value = time;
-        anomalyObject.rotation.y += 0.005;
-        anomalyObject.rotation.z += 0.002;
-
-        renderer.render(scene, camera);
-        animationFrameId = requestAnimationFrame(animate);
-      };
-      animate();
-
-      // Handle window resize
-      const handleResize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      };
-      window.addEventListener('resize', handleResize);
-
-      // Return cleanup function
-      return () => {
-        cancelAnimationFrame(animationFrameId);
-        window.removeEventListener('resize', handleResize);
-        renderer.dispose();
-        geometry.dispose();
-        material.dispose();
-        if (container && renderer.domElement) {
-          container.removeChild(renderer.domElement);
-        }
-      };
-
-    } catch (error) {
-      console.error('Error initializing background effects:', error);
-      return undefined;
-    }
-  };
 
   // Initialize floating particles
   const initFloatingParticles = () => {
@@ -322,11 +195,8 @@ function AgeSelectionPageContent() {
         }}
       ></div>
 
-      {/* Three.js Container */}
-      <div id="three-container" className="fixed inset-0" style={{ zIndex: 2 }}></div>
-
-      {/* Floating Particles Container */}
-      <div id="floating-particles" className="fixed inset-0 pointer-events-none" style={{ zIndex: 3 }}></div>
+      {/* Floating Particles Container - CSS-based, lightweight */}
+      <div id="floating-particles" className="fixed inset-0 pointer-events-none" style={{ zIndex: 2 }}></div>
       
       <Header />
       
@@ -567,15 +437,23 @@ function AgeSelectionPageContent() {
         </div>
       </footer>
 
-      {/* Memory Loading Screen */}
-      <MemoryLoadingScreen
-        isVisible={loadingState.isLoading}
-        text={`// Initializing ${loadingState.cardType?.toUpperCase()} protocol...`}
-        onComplete={() => {
-          // This will be handled by the handleCardClick timeout
-        }}
-        duration={1500}
-      />
+      {/* Simple CSS Loading Overlay - No Three.js */}
+      {loadingState.isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+          <div className="text-center">
+            {/* Animated Loading Ring */}
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 border-2 border-red-500/30 rounded-full"></div>
+              <div className="absolute inset-0 border-2 border-transparent border-t-red-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-2 border-2 border-transparent border-t-red-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            </div>
+            {/* Loading Text */}
+            <p className="font-mono text-red-400 text-sm animate-pulse">
+              {`// Initializing ${loadingState.cardType?.toUpperCase()} protocol...`}
+            </p>
+          </div>
+        </div>
+      )}
 
 
     </div>
