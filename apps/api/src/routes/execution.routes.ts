@@ -16,7 +16,7 @@ const MAX_QUEUE_DEPTH = parseInt(process.env.MAX_QUEUE_DEPTH || '200');
  */
 router.post('/submit', executionLimiter, dailyExecutionLimiter, optionalAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { code, problemId, userSessionId } = req.body;
+    const { code, input, problemId, userSessionId } = req.body;
 
     if (!code || typeof code !== 'string') {
       return res.status(400).json({
@@ -56,6 +56,7 @@ router.post('/submit', executionLimiter, dailyExecutionLimiter, optionalAuthMidd
       jobId,
       userId,
       code,
+      input: input || '', // Pass user input for stdin
       language: 'python',
       problemId,
       userSessionId,

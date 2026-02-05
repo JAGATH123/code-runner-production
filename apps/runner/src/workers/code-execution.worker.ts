@@ -63,10 +63,10 @@ export class CodeExecutionWorker {
         { status: 'processing' }
       );
 
-      // Execute code using Docker
+      // Execute code using Docker (with user input if provided)
       const result = await DockerExecutor.executeCode(
         job.data.code,
-        '' // No input for simple execution
+        job.data.input || '' // Pass user input for stdin
       );
 
       // Save result to database (including files if any)

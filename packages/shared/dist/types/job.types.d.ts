@@ -6,6 +6,7 @@ export interface CodeExecutionJobData {
     jobId: string;
     userId: string;
     code: string;
+    input?: string;
     language: 'python';
     problemId?: number;
     userSessionId?: string;

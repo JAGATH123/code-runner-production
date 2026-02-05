@@ -9,6 +9,7 @@ export interface CodeExecutionJobData {
   jobId: string;
   userId: string;
   code: string;
+  input?: string; // User input for stdin
   language: 'python';
   problemId?: number;
   userSessionId?: string; // For persistent file storage
