@@ -1,5 +1,9 @@
 'use client';
 
+const CLOUDINARY_BASE = 'https://res.cloudinary.com/dwqzqxeuk';
+const CDN_HINT = `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/cheatsheets/hint.png`;
+const CDN_GALAXY_BG = `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/cheatsheets/galaxy-bg.jpg`;
+
 export interface CheatSheetBox {
   number: number;
   title: string;
@@ -18,26 +22,28 @@ interface CheatSheetTemplateProps {
   character?: CheatSheetCharacter;
 }
 
-// Asset paths for each character
+// Asset paths for each character - using Cloudinary CDN
 const getAssetPaths = (character: CheatSheetCharacter) => {
+  const CDN = `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/cheatsheets`;
+
   if (character === 'default') {
     return {
-      topFrame: '/assets/cheatsheets/Frame/full-frame/top-frame-2.png',
-      bottomFrame: '/assets/cheatsheets/Frame/full-frame/bottom frame.png',
-      leftRod: '/assets/cheatsheets/Frame/full-frame/Frame_rod.png',
-      rightRod: '/assets/cheatsheets/Frame/full-frame/Frame_rod_right.png',
-      numberLabel: '/assets/cheatsheets/Frame/small-frame/Number Label.png',
+      topFrame: `${CDN}/Frame/full-frame/top-frame-2.png`,
+      bottomFrame: `${CDN}/Frame/full-frame/bottom%20frame.png`,
+      leftRod: `${CDN}/Frame/full-frame/Frame_rod.png`,
+      rightRod: `${CDN}/Frame/full-frame/Frame_rod_right.png`,
+      numberLabel: `${CDN}/Frame/small-frame/Number%20Label.png`,
     };
   }
 
   // Character-specific assets
   const folder = `Assets_${character}`;
   return {
-    topFrame: `/assets/cheatsheets/${folder}/top-frame.png`,
-    bottomFrame: `/assets/cheatsheets/${folder}/bottom frame.png`,
-    leftRod: `/assets/cheatsheets/${folder}/frame_rod.png`,
-    rightRod: `/assets/cheatsheets/${folder}/frame_rod.png`, // Same rod for both sides
-    numberLabel: `/assets/cheatsheets/${folder}/Number-Label.png`,
+    topFrame: `${CDN}/${folder}/top-frame.png`,
+    bottomFrame: `${CDN}/${folder}/bottom%20frame.png`,
+    leftRod: `${CDN}/${folder}/frame_rod.png`,
+    rightRod: `${CDN}/${folder}/frame_rod.png`, // Same rod for both sides
+    numberLabel: `${CDN}/${folder}/Number-Label.png`,
   };
 };
 
@@ -108,7 +114,7 @@ export default function CheatSheetTemplate({
           style={{
             width: `${TEMPLATE_WIDTH}px`,
             minHeight: '100vh',
-            backgroundImage: 'url(/assets/cheatsheets/galaxy-bg.jpg)',
+            backgroundImage: `url(${CDN_GALAXY_BG})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -226,7 +232,7 @@ export default function CheatSheetTemplate({
                       </div>
                       {/* Hint Icon */}
                       <div className="hint-icon">
-                        <img src="/assets/cheatsheets/hint.png" alt="" />
+                        <img src={CDN_HINT} alt="" />
                       </div>
                     </div>
                   </div>

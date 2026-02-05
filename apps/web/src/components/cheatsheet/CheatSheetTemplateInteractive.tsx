@@ -2,6 +2,9 @@
 
 import { useState, useRef } from 'react';
 
+const CLOUDINARY_BASE = 'https://res.cloudinary.com/dwqzqxeuk';
+const CDN_ARTBOARD = `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/cheatsheets/artboard-1.png`;
+
 export interface CheatSheetBox {
   number: number;
   title: string;
@@ -262,7 +265,7 @@ export default function CheatSheetTemplateInteractive({
         >
         {/* Background Image */}
         <img
-          src="/assets/cheatsheets/artboard-1.png"
+          src={CDN_ARTBOARD}
           alt="Template"
           className="select-none pointer-events-none"
           draggable={false}

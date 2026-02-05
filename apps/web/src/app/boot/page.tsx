@@ -3,6 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { CLOUDINARY_BASE } from '@/lib/cloudinary';
+
+const CDN_ENV = `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/ui/ENV-2.png`;
+
+// Audio CDN URLs
+const CDN_AUDIO = {
+  stdout: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/stdout.wav`,
+  granted: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/granted.wav`,
+  theme: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/theme.wav`,
+};
 
 const bootLog = `Welcome to eDEX-UI!
 vm_page_bootstrap: 987323 free pages and 53061 wired pages
@@ -110,11 +120,11 @@ export default function BootPage() {
       return;
     }
 
-    // Initialize audio
+    // Initialize audio from Cloudinary CDN
     audioRef.current = {
-      stdout: new Audio('/audio/stdout.wav'),
-      granted: new Audio('/audio/granted.wav'),
-      theme: new Audio('/audio/theme.wav'),
+      stdout: new Audio(CDN_AUDIO.stdout),
+      granted: new Audio(CDN_AUDIO.granted),
+      theme: new Audio(CDN_AUDIO.theme),
     };
 
     if (audioRef.current.stdout) audioRef.current.stdout.volume = 0.5;
@@ -226,13 +236,13 @@ export default function BootPage() {
       {/* Background Image - ENV from Login Page */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/assets/ui/ENV-2.png"
+          src={CDN_ENV}
           alt="Background"
           fill
+          unoptimized
           className="object-cover blur-0 "
           style={{ opacity: 1 }}
           priority
-          quality={100}
         />
         {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-black/50" />

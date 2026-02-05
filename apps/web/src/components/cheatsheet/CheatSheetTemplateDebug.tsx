@@ -3,6 +3,9 @@
 import { Lightbulb } from 'lucide-react';
 import { useState } from 'react';
 
+const CLOUDINARY_BASE = 'https://res.cloudinary.com/dwqzqxeuk';
+const CDN_ARTBOARD = `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/cheatsheets/artboard-1.png`;
+
 export interface CheatSheetBox {
   number: number;
   title: string;
@@ -98,7 +101,7 @@ export default function CheatSheetTemplateDebug({
 
       {/* Template Background Image */}
       <img
-        src="/assets/cheatsheets/Artboard 1.png"
+        src={CDN_ARTBOARD}
         alt="Cheat Sheet Template Background"
         className="w-full h-auto"
         style={{ display: 'block' }}

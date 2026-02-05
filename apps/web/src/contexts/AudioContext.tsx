@@ -1,6 +1,18 @@
 'use client';
 
 import { createContext, useContext, useCallback, useRef, useEffect, useState, ReactNode } from 'react';
+import { CLOUDINARY_BASE } from '@/lib/cloudinary';
+
+// Cloudinary audio URLs
+const AUDIO_URLS = {
+  background: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/music-highq.ogg`,
+  mission: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/scott-buckley-passage-of-time.mp3`,
+  profile: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/lesion-x-a-journey-through-the-universe-1.mp3`,
+  buttonClick: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/Deploy_Click.ogg`,
+  cardHover: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/card_sound.ogg`,
+  beeps: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/beeps2.ogg`,
+  projectText: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/project-text.ogg`,
+};
 
 interface AudioConfig {
   volume?: number;
@@ -184,10 +196,10 @@ const initializeAudioObjects = () => {
   if (typeof window === 'undefined') return;
 
   if (!globalAudioState.backgroundMusic) {
-    const bgMusic = new Audio('/audio/music-highq.ogg');
+    const bgMusic = new Audio(AUDIO_URLS.background);
     bgMusic.loop = true;
     bgMusic.volume = 0.3;
-    bgMusic.preload = 'auto';
+    bgMusic.preload = 'none'; // Lazy load - don't preload until needed
     
     bgMusic.addEventListener('play', () => {
       globalAudioState.isBackgroundMusicPlaying = true;
@@ -205,10 +217,10 @@ const initializeAudioObjects = () => {
   }
 
   if (!globalAudioState.missionMusic) {
-    const missionMusic = new Audio('/audio/scott-buckley-passage-of-time.mp3');
+    const missionMusic = new Audio(AUDIO_URLS.mission);
     missionMusic.loop = true;
     missionMusic.volume = 0.4;
-    missionMusic.preload = 'auto';
+    missionMusic.preload = 'none'; // Lazy load
     
     missionMusic.addEventListener('play', () => {
       globalAudioState.isMissionMusicPlaying = true;
@@ -226,10 +238,10 @@ const initializeAudioObjects = () => {
   }
 
   if (!globalAudioState.profileMusic) {
-    const profileMusic = new Audio('/audio/lesion-x-a-journey-through-the-universe-1.mp3');
+    const profileMusic = new Audio(AUDIO_URLS.profile);
     profileMusic.loop = true;
     profileMusic.volume = 0.4;
-    profileMusic.preload = 'auto';
+    profileMusic.preload = 'none'; // Lazy load
     
     profileMusic.addEventListener('play', () => {
       globalAudioState.isProfileMusicPlaying = true;
@@ -247,30 +259,30 @@ const initializeAudioObjects = () => {
   }
 
   if (!globalAudioState.buttonClick) {
-    const buttonClickAudio = new Audio('/audio/Deploy_Click.ogg');
+    const buttonClickAudio = new Audio(AUDIO_URLS.buttonClick);
     buttonClickAudio.volume = 0.6;
-    buttonClickAudio.preload = 'auto';
+    buttonClickAudio.preload = 'auto'; // Small file - preload OK
     globalAudioState.buttonClick = buttonClickAudio;
   }
 
   if (!globalAudioState.cardHover) {
-    const cardHoverAudio = new Audio('/audio/card_sound.ogg');
+    const cardHoverAudio = new Audio(AUDIO_URLS.cardHover);
     cardHoverAudio.volume = 0.4;
-    cardHoverAudio.preload = 'auto';
+    cardHoverAudio.preload = 'auto'; // Small file - preload OK
     globalAudioState.cardHover = cardHoverAudio;
   }
 
   if (!globalAudioState.beepsSound) {
-    const beepsAudio = new Audio('/audio/beeps2.ogg');
+    const beepsAudio = new Audio(AUDIO_URLS.beeps);
     beepsAudio.volume = 0.5;
-    beepsAudio.preload = 'auto';
+    beepsAudio.preload = 'auto'; // Small file - preload OK
     globalAudioState.beepsSound = beepsAudio;
   }
 
   if (!globalAudioState.projectTextSound) {
-    const projectTextAudio = new Audio('/audio/project-text.ogg');
+    const projectTextAudio = new Audio(AUDIO_URLS.projectText);
     projectTextAudio.volume = 0.7;
-    projectTextAudio.preload = 'auto';
+    projectTextAudio.preload = 'auto'; // Small file - preload OK
     globalAudioState.projectTextSound = projectTextAudio;
   }
 };

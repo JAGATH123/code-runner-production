@@ -1,6 +1,14 @@
 'use client';
 
 import { useCallback, useRef, useEffect, useState } from 'react';
+import { CLOUDINARY_BASE } from '@/lib/cloudinary';
+
+// Audio CDN URLs
+const CDN_AUDIO = {
+  backgroundMusic: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/music-highq.ogg`,
+  buttonClick: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/Deploy_Click.ogg`,
+  cardHover: `${CLOUDINARY_BASE}/video/upload/code-runner/audio/card_sound.ogg`,
+};
 
 interface AudioConfig {
   volume?: number;
@@ -21,7 +29,7 @@ export function useAudio(src: string, config: AudioConfig = {}): UseAudioReturn 
   const {
     volume = 0.5,
     loop = false,
-    preload = true
+    preload = false
   } = config;
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -100,18 +108,18 @@ export function useAudio(src: string, config: AudioConfig = {}): UseAudioReturn 
 }
 
 export function useAudioManager() {
-  const backgroundMusic = useAudio('/audio/music-highq.ogg', {
+  const backgroundMusic = useAudio(CDN_AUDIO.backgroundMusic, {
     loop: true,
     volume: 0.3,
     preload: true
   });
 
-  const buttonClick = useAudio('/audio/Deploy_Click.ogg', {
+  const buttonClick = useAudio(CDN_AUDIO.buttonClick, {
     volume: 0.6,
     preload: true
   });
 
-  const cardHover = useAudio('/audio/card_sound.ogg', {
+  const cardHover = useAudio(CDN_AUDIO.cardHover, {
     volume: 0.4,
     preload: true
   });
