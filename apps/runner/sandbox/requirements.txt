@@ -1,13 +1,15 @@
 # =============================================================================
 # Python Sandbox Requirements
 # =============================================================================
-# This file lists Python packages available to student code
-# Keep minimal for fast builds and reduced attack surface
+# Packages available to student code in the sandbox environment
 
-# No external packages initially
-# Add packages based on curriculum needs:
-# - numpy
-# - pandas
-# - matplotlib
-# - pygame
-# etc.
+# Data Science & Visualization
+numpy>=1.24.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+
+# Image Processing
+pillow>=10.0.0
+
+# Game Development (requires SDL libraries in Dockerfile)
+pygame>=2.5.0

@@ -69,7 +69,7 @@ export class CodeExecutionWorker {
         '' // No input for simple execution
       );
 
-      // Save result to database
+      // Save result to database (including files if any)
       await Models.ExecutionResult.updateOne(
         { jobId: job.data.jobId },
         {
@@ -79,6 +79,9 @@ export class CodeExecutionWorker {
             stderr: result.stderr,
             status: result.status,
             executionTime: result.executionTime,
+            exitCode: result.exitCode,
+            // Include generated files (images, etc.)
+            files: result.files,
           },
           completedAt: new Date(),
         }
@@ -88,7 +91,9 @@ export class CodeExecutionWorker {
         jobId: job.data.jobId,
         status: result.status,
         executionTime: result.executionTime,
+        filesCount: result.files?.length || 0,
       });
+
     } catch (error) {
       logger.error('Code execution job failed', {
         jobId: job.data.jobId,

@@ -1,5 +1,10 @@
-// Queue Job Types (NEW for async execution)
+// Queue Job Types for async execution
 
+import { ExecutionFile } from './execution.types';
+
+/**
+ * Job data for simple code execution (test runs)
+ */
 export interface CodeExecutionJobData {
   jobId: string;
   userId: string;
@@ -10,6 +15,9 @@ export interface CodeExecutionJobData {
   timestamp: number;
 }
 
+/**
+ * Job data for code submission (grading with test cases)
+ */
 export interface SubmissionJobData {
   jobId: string;
   userId: string;
@@ -23,19 +31,22 @@ export interface SubmissionJobData {
   timestamp: number;
 }
 
+/**
+ * Result of a job execution
+ */
 export interface JobResult {
   jobId: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   result?: {
     stdout: string;
     stderr: string;
+    status: 'Success' | 'Error' | 'Timeout';
     executionTime: number;
+    exitCode?: number;
+    // Generated files (images, text, etc.)
+    files?: ExecutionFile[];
+    // Legacy fields
     plots?: string[];
-    files?: Array<{
-      name: string;
-      size: number;
-      path: string;
-    }>;
     pygameBundle?: {
       html: string;
       wasm: string;
@@ -46,13 +57,18 @@ export interface JobResult {
   submissionResult?: {
     status: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Error';
     passed: number;
+    failed: number;
     total: number;
-    results?: Array<{
+    passRate: number;
+    allPassed: boolean;
+    executionTime: number;
+    testResults?: Array<{
       input: string;
-      expected: string;
-      actual: string;
-      passed: boolean;
+      expected_output: string;
+      actual_output: string;
+      status: 'passed' | 'failed';
       error?: string;
+      is_hidden?: boolean;
     }>;
   };
   error?: string;

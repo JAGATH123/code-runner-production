@@ -25,6 +25,60 @@ const logger = getLogger('runner');
 let executionWorker: CodeExecutionWorker;
 let submissionWorker: CodeSubmissionWorker;
 
+/**
+ * Format pool stats as a readable table
+ */
+function formatPoolStats(stats: any): string {
+  if (!stats.enabled) {
+    return '  Container pooling is disabled';
+  }
+
+  const lines: string[] = [];
+
+  // Header
+  lines.push('');
+  lines.push('  ┌─────────────────────────────────────────────────────────────────┐');
+  lines.push('  │                    CONTAINER POOL STATUS                        │');
+  lines.push('  ├─────────────────────────────────────────────────────────────────┤');
+
+  // Summary section
+  lines.push('  │  SUMMARY                                                        │');
+  lines.push(`  │    Total Containers: ${String(stats.total).padEnd(4)} │ In Use: ${String(stats.inUse).padEnd(4)} │ Available: ${String(stats.available).padEnd(4)}│`);
+  lines.push(`  │    Utilization: ${String(stats.utilization + '%').padEnd(6)} │ Total Executions: ${String(stats.totalExecutions).padEnd(18)}│`);
+  lines.push('  ├─────────────────────────────────────────────────────────────────┤');
+
+  // Limits section
+  lines.push('  │  SCALING LIMITS                                                 │');
+  lines.push(`  │    Min: ${String(stats.limits.min).padEnd(3)} │ Soft Max: ${String(stats.limits.soft).padEnd(3)} │ Hard Max: ${String(stats.limits.hard).padEnd(21)}│`);
+
+  // Scaling status
+  const scalingStatus = stats.scaling.atHardLimit ? '🔴 AT HARD LIMIT' :
+                        stats.scaling.atSoftLimit ? '🟡 AT SOFT LIMIT' :
+                        '🟢 CAN SCALE UP';
+  lines.push(`  │    Status: ${scalingStatus.padEnd(52)}│`);
+  lines.push('  ├─────────────────────────────────────────────────────────────────┤');
+
+  // Containers section
+  lines.push('  │  CONTAINERS                                                     │');
+  lines.push('  │    Name                              │ Status │ Execs │ Age(s) │');
+  lines.push('  │  ────────────────────────────────────┼────────┼───────┼────────│');
+
+  if (stats.containers && stats.containers.length > 0) {
+    for (const container of stats.containers) {
+      const status = container.inUse ? '🔵 BUSY' : '🟢 IDLE';
+      const name = container.name.length > 36 ? container.name.substring(0, 33) + '...' : container.name;
+      lines.push(`  │    ${name.padEnd(36)} │ ${status} │ ${String(container.executions).padStart(5)} │ ${String(container.ageSeconds).padStart(6)} │`);
+    }
+  } else {
+    lines.push('  │    (no containers)                                             │');
+  }
+
+  lines.push('  └─────────────────────────────────────────────────────────────────┘');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
 async function startRunner() {
   try {
     logger.info('Starting Code Runner Worker Service');
@@ -66,13 +120,13 @@ async function startRunner() {
     setInterval(() => {
       const poolStats = DockerExecutor.getPoolStats();
       if (poolStats.enabled) {
-        logger.info('Container pool statistics', poolStats);
+        console.log(formatPoolStats(poolStats));
       }
     }, 5 * 60 * 1000);
 
     // Log initial pool stats
     const initialPoolStats = DockerExecutor.getPoolStats();
-    logger.info('Container pool status', initialPoolStats);
+    console.log(formatPoolStats(initialPoolStats));
 
   } catch (error) {
     logger.error('Failed to start runner service', {

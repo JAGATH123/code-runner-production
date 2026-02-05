@@ -62,6 +62,10 @@ import { redis, initializeQueues } from './queue/queue.config';
 const app: Express = express();
 const PORT = process.env.PORT || 4000;
 
+// ✅ Trust proxy - required when behind reverse proxy (Nginx/Cloudflare/Railway)
+// This allows express-rate-limit to correctly identify users via X-Forwarded-For header
+app.set('trust proxy', true);
+
 // Force cache bust for Railway deployment
 const BUILD_ID = '20260119-1';
 
@@ -75,10 +79,16 @@ const corsOrigins = process.env.CORS_ORIGIN
 
 logger.info('CORS configuration loaded', { origins: corsOrigins });
 
+// ✅ UPDATED CORS CONFIGURATION FOR CLOUDFLARE TUNNEL
 app.use(cors({
   origin: corsOrigins,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600
 }));
+
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true }));
 
@@ -137,6 +147,64 @@ app.get('/health/redis', async (req, res) => {
         REDIS_HOST: process.env.REDIS_HOST || 'not set',
         REDIS_PORT: process.env.REDIS_PORT || 'not set',
       },
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Comprehensive metrics endpoint for monitoring
+app.get('/health/metrics', async (req, res) => {
+  try {
+    // Get queue stats from Redis
+    const executionWaiting = await redis.llen('bull:code-execution:wait');
+    const executionActive = await redis.llen('bull:code-execution:active');
+    const executionCompleted = await redis.zcard('bull:code-execution:completed');
+    const executionFailed = await redis.zcard('bull:code-execution:failed');
+
+    const submissionWaiting = await redis.llen('bull:code-submission:wait');
+    const submissionActive = await redis.llen('bull:code-submission:active');
+    const submissionCompleted = await redis.zcard('bull:code-submission:completed');
+    const submissionFailed = await redis.zcard('bull:code-submission:failed');
+
+    // Calculate health status
+    const queueTotal = executionWaiting + executionActive + submissionWaiting + submissionActive;
+    let healthStatus: 'healthy' | 'warning' | 'critical' = 'healthy';
+
+    if (queueTotal > 100) {
+      healthStatus = 'critical';
+    } else if (queueTotal > 50) {
+      healthStatus = 'warning';
+    }
+
+    res.json({
+      status: healthStatus,
+      timestamp: new Date().toISOString(),
+      queues: {
+        execution: {
+          waiting: executionWaiting,
+          active: executionActive,
+          completed: executionCompleted,
+          failed: executionFailed,
+          total: executionWaiting + executionActive,
+        },
+        submission: {
+          waiting: submissionWaiting,
+          active: submissionActive,
+          completed: submissionCompleted,
+          failed: submissionFailed,
+          total: submissionWaiting + submissionActive,
+        },
+      },
+      thresholds: {
+        warning: 50,
+        critical: 100,
+        current: queueTotal,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
       timestamp: new Date().toISOString(),
     });
   }

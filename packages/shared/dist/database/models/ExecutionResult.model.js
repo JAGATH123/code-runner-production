@@ -70,5 +70,6 @@ const ExecutionResultSchema = new mongoose_1.Schema({
 // Indexes
 // Note: jobId unique index and createdAt TTL index are automatically created by schema field definitions
 ExecutionResultSchema.index({ userId: 1, createdAt: -1 });
+ExecutionResultSchema.index({ status: 1, createdAt: -1 });
 exports.ExecutionResult = mongoose_1.default.models.ExecutionResult || mongoose_1.default.model('ExecutionResult', ExecutionResultSchema);
 //# sourceMappingURL=ExecutionResult.model.js.map

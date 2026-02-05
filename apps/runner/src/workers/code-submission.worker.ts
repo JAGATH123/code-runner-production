@@ -58,6 +58,7 @@ export class CodeSubmissionWorker {
       jobId: job.data.jobId,
       problemId: job.data.problemId,
       userId: job.data.userId,
+      testCaseCount: job.data.testCases.length,
     });
 
     try {
@@ -75,8 +76,20 @@ export class CodeSubmissionWorker {
 
       // Calculate pass rate
       const totalTests = testResults.results.length;
-      const passRate = (testResults.passed / totalTests) * 100;
+      const passRate = totalTests > 0 ? (testResults.passed / totalTests) * 100 : 0;
       const allPassed = testResults.passed === totalTests;
+
+      // Determine submission status
+      let submissionStatus: 'Accepted' | 'Wrong Answer' | 'Time Limit Exceeded' | 'Error';
+      if (allPassed) {
+        submissionStatus = 'Accepted';
+      } else if (testResults.results.some(r => r.error?.includes('timed out'))) {
+        submissionStatus = 'Time Limit Exceeded';
+      } else if (testResults.results.some(r => r.error)) {
+        submissionStatus = 'Error';
+      } else {
+        submissionStatus = 'Wrong Answer';
+      }
 
       // Save submission result to database
       await Models.ExecutionResult.updateOne(
@@ -84,9 +97,14 @@ export class CodeSubmissionWorker {
         {
           status: 'completed',
           submissionResult: {
+            status: submissionStatus,
             testResults: testResults.results.map((r, i) => ({
-              ...r,
-              is_hidden: job.data.testCases[i].is_hidden,
+              input: r.input,
+              expected_output: r.expected_output,
+              actual_output: r.actual_output,
+              status: r.status,
+              error: r.error,
+              is_hidden: job.data.testCases[i]?.is_hidden,
             })),
             passed: testResults.passed,
             failed: testResults.failed,
@@ -101,6 +119,7 @@ export class CodeSubmissionWorker {
 
       logger.info('Grading job completed', {
         jobId: job.data.jobId,
+        status: submissionStatus,
         passed: testResults.passed,
         total: totalTests,
         passRate: passRate.toFixed(1),
@@ -108,13 +127,14 @@ export class CodeSubmissionWorker {
         executionTime: testResults.totalExecutionTime,
       });
 
-      // TODO: Update user progress when Progress model is added to shared package
+      // Log success if all tests passed
       if (allPassed) {
-        logger.info('All tests passed', {
+        logger.info('All tests passed!', {
           userId: job.data.userId,
           problemId: job.data.problemId,
         });
       }
+
     } catch (error) {
       logger.error('Grading job failed', {
         jobId: job.data.jobId,

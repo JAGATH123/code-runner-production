@@ -127,7 +127,8 @@ router.get('/result/:jobId', async (req: Request, res: Response) => {
  * POST /execution/submit/grade
  * Submit code for grading (runs against all test cases)
  */
-router.post('/submit/grade', executionLimiter, dailyExecutionLimiter, authMiddleware, async (req: Request, res: Response) => {
+// TODO: Change back to authMiddleware after implementing user authentication
+router.post('/submit/grade', executionLimiter, dailyExecutionLimiter, optionalAuthMiddleware, async (req: Request, res: Response) => {
   try {
     const { code, problemId } = req.body;
 
@@ -179,7 +180,7 @@ router.post('/submit/grade', executionLimiter, dailyExecutionLimiter, authMiddle
 
     // Generate unique job ID
     const jobId = uuidv4();
-    const userId = req.user!.userId;
+    const userId = req.user?.userId || 'anonymous';
 
     // Create submission job data
     const jobData: SubmissionJobData = {
