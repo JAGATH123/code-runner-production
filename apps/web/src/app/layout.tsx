@@ -17,10 +17,10 @@ export default function RootLayout({
     <html lang="en" className="light">
       <head>
         <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
+        {/* Preconnect for faster font loading - actual fonts loaded via globals.css */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet" />
+        {/* REMOVED: Duplicate Inter + unused Source Code Pro - fonts now only in globals.css */}
       </head>
       <body className="font-body antialiased">
         <AudioProvider>

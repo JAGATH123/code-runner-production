@@ -3,6 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { CLOUDINARY_BASE } from '@/lib/cloudinary';
+
+// Cloudinary image URLs with auto-optimization
+const CDN_IMAGES = {
+  env: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/ui/ENV-2.png`,
+  transparent: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/ui/transperent.png`,
+  logo: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/ui/LOF_SVG.svg`,
+  background: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/ui/background.webp`,
+  nila: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/characters/nila%20%282%29.png`,
+  astro: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/characters/Astro.png`,
+  kenji: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/characters/Kenji_2.png`,
+  leo: `${CLOUDINARY_BASE}/image/upload/f_auto,q_auto/code-runner/characters/Leo.png`,
+};
 
 type Agent = 'jett' | 'omen' | 'yoru' | 'phoenix' | null;
 
@@ -230,12 +243,12 @@ export default function LoginPage() {
   useEffect(() => {
     // Preload all images with minimum delay to ensure background is visible
     const imageUrls = [
-      '/assets/ui/ENV-2.png',
-      '/assets/ui/transperent.png',
-      '/assets/characters/nila (2).png',
-      '/assets/characters/Astro.png',
-      '/assets/characters/Kenji_2.png',
-      '/assets/characters/Leo.png'
+      CDN_IMAGES.env,
+      CDN_IMAGES.transparent,
+      CDN_IMAGES.nila,
+      CDN_IMAGES.astro,
+      CDN_IMAGES.kenji,
+      CDN_IMAGES.leo
     ];
 
     let loadedCount = 0;
@@ -331,12 +344,13 @@ export default function LoginPage() {
         {/* Background */}
         <div className="absolute inset-0 overflow-hidden bg-slate-200">
           <Image
-            src="/assets/ui/ENV-2.png"
+            src={CDN_IMAGES.env}
             alt="Background"
             fill
             className="object-cover opacity-150"
             priority
             sizes="100vw"
+            unoptimized
             style={{ objectPosition: 'center' }}
           />
           <div className="noise-grain" />
@@ -473,7 +487,7 @@ export default function LoginPage() {
                   <div className="mb-20">
                     <div className="mb-20 ">
                       <Image
-                        src="/assets/ui/transperent.png"
+                        src={CDN_IMAGES.transparent}
                         alt="Logo"
                         width={120}
                         height={120}
@@ -545,7 +559,7 @@ export default function LoginPage() {
                       <span className="text-base font-mono uppercase tracking-[0.15em] font-bold">Developed by</span>
                       <div className="w-full flex justify-center -mt-8">
                         <Image
-                          src="/assets/ui/LOF_SVG.svg"
+                          src={CDN_IMAGES.logo}
                           alt="LOF Logo"
                           width={140}
                           height={140}
@@ -572,9 +586,10 @@ export default function LoginPage() {
               >
                 <div className="w-full h-full relative overflow-hidden">
                   <Image
-                    src="/assets/ui/background.png"
+                    src={CDN_IMAGES.background}
                     alt="Background Card"
                     fill
+                    unoptimized
                     className="object-cover"
                     priority
                     sizes="70vw"
@@ -598,9 +613,10 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('jett') : undefined}
                 >
                   <Image
-                    src="/assets/characters/nila (2).png"
+                    src={CDN_IMAGES.nila}
                     alt="Nila"
                     fill
+                    unoptimized
                     className="opacity-90 object-cover object-top"
                     priority
                     sizes="25vw"
@@ -635,9 +651,10 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('omen') : undefined}
                 >
                   <Image
-                    src="/assets/characters/Astro.png"
+                    src={CDN_IMAGES.astro}
                     alt="Astra"
                     fill
+                    unoptimized
                     className="opacity-90 object-cover object-top"
                     priority
                     sizes="25vw"
@@ -672,9 +689,10 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('yoru') : undefined}
                 >
                   <Image
-                    src="/assets/characters/Kenji_2.png"
+                    src={CDN_IMAGES.kenji}
                     alt="Kenji"
                     fill
+                    unoptimized
                     className="opacity-90 object-cover object-top"
                     priority
                     sizes="25vw"
@@ -709,9 +727,10 @@ export default function LoginPage() {
                   onClick={isSelectionMode ? () => handleAgentSelect('phoenix') : undefined}
                 >
                   <Image
-                    src="/assets/characters/Leo.png"
+                    src={CDN_IMAGES.leo}
                     alt="Leo"
                     fill
+                    unoptimized
                     className="opacity-90 object-cover object-top"
                     priority
                     sizes="25vw"

@@ -164,6 +164,34 @@ export function FreeCompiler() {
               </div>
             </div>
           )}
+
+          {/* Display images from result.files (new ExecutionFile format) */}
+          {result.files && result.files.some((f: any) => f.type === 'image' && f.data) && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-space text-neon-purple">
+                <Terminal className="h-3 w-3" />
+                <span>VISUAL OUTPUT</span>
+              </div>
+              <div className="max-h-80 overflow-y-auto space-y-3">
+                {result.files
+                  .filter((f: any) => f.type === 'image' && f.data)
+                  .map((file: any, index: number) => (
+                    <div key={index} className="bg-space-gray/20 border border-neon-purple/30 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-mono text-neon-purple">{file.name || `Plot ${index + 1}`}</span>
+                      </div>
+                      <div className="max-h-64 overflow-auto">
+                        <img
+                          src={`data:${file.mimeType || 'image/png'};base64,${file.data}`}
+                          alt={file.name || `Visual output ${index + 1}`}
+                          className="w-full h-auto rounded border border-neon-purple/20"
+                        />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
